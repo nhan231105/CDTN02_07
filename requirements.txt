@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-python-jose[cryptography]
-passlib[bcrypt]
-python-dotenv
-psycopg2-binary
-pymysql
