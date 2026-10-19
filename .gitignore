@@ -62,3 +62,8 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+### Frontend ###
+node_modules/
+dist/
+.idea/doNotAskNotifications.xml
+.idea/encodings.xml
