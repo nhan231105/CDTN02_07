@@ -1,46 +1,35 @@
 # ⚡ QUICKSTART - Freelance Marketplace
 
-## 🚀 Chạy Demo ngay (30 giây)
+## 🚀 Chạy project (bằng lệnh console)
 
-### Bước 1: Cài Docker
-- **Windows/Mac:** https://www.docker.com/products/docker-desktop
-- **Linux:** `sudo apt-get install docker.io docker-compose`
+Yêu cầu: JDK 21, Node.js (cho frontend). Không cần Docker.
 
-### Bước 2: Run Project
-**Windows:**
+### Backend (Spring Boot, H2 in-memory)
 ```bash
-run.bat
-```
+# Windows
+.\mvnw.bat spring-boot:run
 
-**Linux/Mac:**
+# Linux/Mac
+./mvnw spring-boot:run
+```
+Backend chạy tại `http://localhost:8082/api` (kiểm tra: `/api/auth/health`).
+
+### Frontend (React + Vite)
 ```bash
-chmod +x run.sh
-./run.sh
+cd freelance-frontend
+npm install     # lần đầu
+npm run dev
 ```
-
-### Bước 3: Chọn chế độ
-```
-1 = Demo mode (H2 - không cần MySQL)
-2 = Production mode (MySQL)
-```
-Chọn **1** nếu lần đầu!
-
-### Bước 4: Chờ app khởi động
-```
-✅ App started on port 8080
-✅ Database ready
-✅ API endpoints available
-```
+Frontend chạy tại `http://localhost:5173`.
 
 ---
-
 ## 📌 API Endpoints
 
-**Base URL:** `http://localhost:8080/api`
+**Base URL:** `http://localhost:8082/api`
 
 ### Đăng ký
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:8082/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "fullName": "Nguyen Van A",
@@ -53,7 +42,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 
 ### Đăng nhập
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8082/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "student@example.com",
@@ -63,25 +52,25 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### Admin: Tìm kiếm user
 ```bash
-curl "http://localhost:8080/api/auth/admin/search?keyword=Nguyen"
-curl "http://localhost:8080/api/auth/admin/search?role=STUDENT"
+curl "http://localhost:8082/api/auth/admin/search?keyword=Nguyen"
+curl "http://localhost:8082/api/auth/admin/search?role=STUDENT"
 ```
 
 ### Admin: Thống kê
 ```bash
-curl http://localhost:8080/api/auth/admin/stats
+curl http://localhost:8082/api/auth/admin/stats
 ```
 
 ### Health Check
 ```bash
-curl http://localhost:8080/api/auth/health
+curl http://localhost:8082/api/auth/health
 ```
 
 ---
 
 ## 🗄️ H2 Database Console (Demo mode)
 ```
-URL: http://localhost:8080/api/h2-console
+URL: http://localhost:8082/api/h2-console
 JDBC URL: jdbc:h2:mem:freelance_marketplace
 User: sa
 Password: (leave blank)
@@ -93,7 +82,6 @@ Password: (leave blank)
 ```
 ├── Dockerfile              # Docker image
 ├── docker-compose.yml      # Services config
-├── run.bat / run.sh       # Startup scripts
 ├── .env.example           # Environment template
 ├── pom.xml                # Maven dependencies
 ├── README.md              # Full documentation
@@ -159,14 +147,14 @@ git push heroku main
 
 ## ❓ Troubleshooting
 
-**Port 8080 đang được sử dụng:**
+**Port 8082 đang được sử dụng:**
 ```bash
 # Windows
-netstat -ano | findstr :8080
+netstat -ano | findstr :8082
 taskkill /PID <PID> /F
 
 # Linux/Mac
-lsof -i :8080
+lsof -i :8082
 kill -9 <PID>
 ```
 

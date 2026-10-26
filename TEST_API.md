@@ -1,9 +1,9 @@
 # API Testing Guide - Freelance Marketplace
 
 ## Server Status ✅
-- **URL**: http://localhost:8080/api
+- **URL**: http://localhost:8082/api
 - **Database**: H2 In-memory (resets on restart)
-- **Port**: 8080
+- **Port**: 8082
 - **Context Path**: /api
 
 ## ✅ Tested & Working Endpoints
@@ -12,13 +12,13 @@
 
 #### Health Check
 ```bash
-curl http://localhost:8080/api/auth/health
+curl http://localhost:8082/api/auth/health
 ```
 **Response**: `{"success":true,"message":"Auth service is running"}`
 
 #### Register User (Student)
 ```bash
-curl -X POST http://localhost:8080/api/auth/register ^
+curl -X POST http://localhost:8082/api/auth/register ^
   -H Content-Type:application/json ^
   -d @register.json
 ```
@@ -36,7 +36,7 @@ curl -X POST http://localhost:8080/api/auth/register ^
 
 #### Register User (Employer)
 ```bash
-curl -X POST http://localhost:8080/api/auth/register ^
+curl -X POST http://localhost:8082/api/auth/register ^
   -H Content-Type:application/json ^
   -d @employer_reg.json
 ```
@@ -53,7 +53,7 @@ curl -X POST http://localhost:8080/api/auth/register ^
 
 #### Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login ^
+curl -X POST http://localhost:8082/api/auth/login ^
   -H Content-Type:application/json ^
   -d @login.json
 ```
@@ -67,7 +67,7 @@ curl -X POST http://localhost:8080/api/auth/login ^
 
 #### Admin Stats
 ```bash
-curl http://localhost:8080/api/auth/admin/stats
+curl http://localhost:8082/api/auth/admin/stats
 ```
 **Response**: `{"success":true,"message":"Thong ke thanh cong","data":{"totalUsers":2,"totalStudents":1,"totalEmployers":1,...}}`
 
@@ -77,7 +77,7 @@ curl http://localhost:8080/api/auth/admin/stats
 
 #### Create Job (Employer)
 ```bash
-curl -X POST http://localhost:8080/api/jobs ^
+curl -X POST http://localhost:8082/api/jobs ^
   -H Content-Type:application/json ^
   -d @job_create.json
 ```
@@ -99,22 +99,22 @@ curl -X POST http://localhost:8080/api/jobs ^
 
 #### Get All Jobs
 ```bash
-curl http://localhost:8080/api/jobs
+curl http://localhost:8082/api/jobs
 ```
 
 #### Get Job by ID
 ```bash
-curl http://localhost:8080/api/jobs/1
+curl http://localhost:8082/api/jobs/1
 ```
 
 #### Search Jobs
 ```bash
-curl "http://localhost:8080/api/jobs/search?keyword=Python&category=Development&location=Ho%20Chi%20Minh"
+curl "http://localhost:8082/api/jobs/search?keyword=Python&category=Development&location=Ho%20Chi%20Minh"
 ```
 
 #### Get Employer Jobs
 ```bash
-curl "http://localhost:8080/api/jobs/employer/2"
+curl "http://localhost:8082/api/jobs/employer/2"
 ```
 
 ---
@@ -123,7 +123,7 @@ curl "http://localhost:8080/api/jobs/employer/2"
 
 #### Student Apply for Job
 ```bash
-curl -X POST http://localhost:8080/api/jobs/1/applications ^
+curl -X POST http://localhost:8082/api/jobs/1/applications ^
   -H Content-Type:application/json ^
   -d @apply.json
 ```
@@ -143,17 +143,17 @@ curl -X POST http://localhost:8080/api/jobs/1/applications ^
 
 #### Get Job Applications
 ```bash
-curl "http://localhost:8080/api/jobs/1/applications?employerId=2"
+curl "http://localhost:8082/api/jobs/1/applications?employerId=2"
 ```
 
 #### Approve Application
 ```bash
-curl -X PATCH "http://localhost:8080/api/jobs/1/applications/1/approve?employerId=2"
+curl -X PATCH "http://localhost:8082/api/jobs/1/applications/1/approve?employerId=2"
 ```
 
 #### Reject Application
 ```bash
-curl -X PATCH "http://localhost:8080/api/jobs/1/applications/1/reject?employerId=2"
+curl -X PATCH "http://localhost:8082/api/jobs/1/applications/1/reject?employerId=2"
 ```
 
 ---
@@ -162,7 +162,7 @@ curl -X PATCH "http://localhost:8080/api/jobs/1/applications/1/reject?employerId
 
 #### Create Review
 ```bash
-curl -X POST http://localhost:8080/api/reviews ^
+curl -X POST http://localhost:8082/api/reviews ^
   -H Content-Type:application/json ^
   -d @review.json
 ```
@@ -178,12 +178,12 @@ curl -X POST http://localhost:8080/api/reviews ^
 
 #### Get Reviews by Job
 ```bash
-curl "http://localhost:8080/api/reviews?jobId=1"
+curl "http://localhost:8082/api/reviews?jobId=1"
 ```
 
 #### Get Reviews by Reviewee
 ```bash
-curl "http://localhost:8080/api/reviews/user/1"
+curl "http://localhost:8082/api/reviews/user/1"
 ```
 
 ---
@@ -192,17 +192,17 @@ curl "http://localhost:8080/api/reviews/user/1"
 
 #### Get User Notifications
 ```bash
-curl "http://localhost:8080/api/notifications?userId=1"
+curl "http://localhost:8082/api/notifications?userId=1"
 ```
 
 #### Mark Notification as Read
 ```bash
-curl -X PATCH "http://localhost:8080/api/notifications/1/read"
+curl -X PATCH "http://localhost:8082/api/notifications/1/read"
 ```
 
 #### Get Unread Count
 ```bash
-curl "http://localhost:8080/api/notifications/unread?userId=1"
+curl "http://localhost:8082/api/notifications/unread?userId=1"
 ```
 
 ---
@@ -211,12 +211,12 @@ curl "http://localhost:8080/api/notifications/unread?userId=1"
 
 #### Get Student Profile
 ```bash
-curl http://localhost:8080/api/profiles/student/1
+curl http://localhost:8082/api/profiles/student/1
 ```
 
 #### Update Student Profile
 ```bash
-curl -X PATCH http://localhost:8080/api/profiles/student/1 ^
+curl -X PATCH http://localhost:8082/api/profiles/student/1 ^
   -H Content-Type:application/json ^
   -d @student_profile.json
 ```
@@ -231,12 +231,12 @@ curl -X PATCH http://localhost:8080/api/profiles/student/1 ^
 
 #### Get Employer Profile
 ```bash
-curl http://localhost:8080/api/profiles/employer/2
+curl http://localhost:8082/api/profiles/employer/2
 ```
 
 #### Update Employer Profile
 ```bash
-curl -X PATCH http://localhost:8080/api/profiles/employer/2 ^
+curl -X PATCH http://localhost:8082/api/profiles/employer/2 ^
   -H Content-Type:application/json ^
   -d @employer_profile.json
 ```
@@ -256,27 +256,27 @@ curl -X PATCH http://localhost:8080/api/profiles/employer/2 ^
 
 #### Remove Job
 ```bash
-curl -X DELETE "http://localhost:8080/api/admin/jobs/1?reason=Inappropriate+content"
+curl -X DELETE "http://localhost:8082/api/admin/jobs/1?reason=Inappropriate+content"
 ```
 
 #### Lock User
 ```bash
-curl -X PATCH "http://localhost:8080/api/admin/users/1/lock?reason=Violation"
+curl -X PATCH "http://localhost:8082/api/admin/users/1/lock?reason=Violation"
 ```
 
 #### Unlock User
 ```bash
-curl -X PATCH "http://localhost:8080/api/admin/users/1/unlock"
+curl -X PATCH "http://localhost:8082/api/admin/users/1/unlock"
 ```
 
 #### Get Violations
 ```bash
-curl "http://localhost:8080/api/admin/violations?status=PENDING"
+curl "http://localhost:8082/api/admin/violations?status=PENDING"
 ```
 
 #### Resolve Violation
 ```bash
-curl -X PATCH "http://localhost:8080/api/admin/violations/1/resolve?action=WARN"
+curl -X PATCH "http://localhost:8082/api/admin/violations/1/resolve?action=WARN"
 ```
 
 ---
@@ -317,7 +317,7 @@ curl -X PATCH "http://localhost:8080/api/admin/violations/1/resolve?action=WARN"
 ### Option 1: Use Files (Recommended)
 ```batch
 REM Create JSON file first, then test
-curl -X POST http://localhost:8080/api/auth/register ^
+curl -X POST http://localhost:8082/api/auth/register ^
   -H Content-Type:application/json ^
   -d @register.json
 ```
@@ -326,7 +326,7 @@ curl -X POST http://localhost:8080/api/auth/register ^
 ```powershell
 cd D:\TAILIEU\ChuyenDe2\DoAn_ChuyenDe2\DoAn_ChuyenDe2
 $json = @{email='test@example.com'; password='Pass@123'} | ConvertTo-Json
-$json | cmd /c "curl -X POST http://localhost:8080/api/auth/register -H Content-Type:application/json"
+$json | cmd /c "curl -X POST http://localhost:8082/api/auth/register -H Content-Type:application/json"
 ```
 
 ### Option 3: Use Postman
@@ -338,7 +338,7 @@ Import the endpoints directly into Postman for easier testing
 
 ### 1. Register Student
 ```bash
-curl -X POST http://localhost:8080/api/auth/register ^
+curl -X POST http://localhost:8082/api/auth/register ^
   -H Content-Type:application/json ^
   -d @register.json
 ```
@@ -346,7 +346,7 @@ curl -X POST http://localhost:8080/api/auth/register ^
 
 ### 2. Register Employer
 ```bash
-curl -X POST http://localhost:8080/api/auth/register ^
+curl -X POST http://localhost:8082/api/auth/register ^
   -H Content-Type:application/json ^
   -d @employer_reg.json
 ```
@@ -354,7 +354,7 @@ curl -X POST http://localhost:8080/api/auth/register ^
 
 ### 3. Create Job
 ```bash
-curl -X POST http://localhost:8080/api/jobs ^
+curl -X POST http://localhost:8082/api/jobs ^
   -H Content-Type:application/json ^
   -d @job_create.json
 ```
@@ -362,7 +362,7 @@ curl -X POST http://localhost:8080/api/jobs ^
 
 ### 4. Apply for Job
 ```bash
-curl -X POST http://localhost:8080/api/jobs/1/applications ^
+curl -X POST http://localhost:8082/api/jobs/1/applications ^
   -H Content-Type:application/json ^
   -d @apply.json
 ```
@@ -370,13 +370,13 @@ curl -X POST http://localhost:8080/api/jobs/1/applications ^
 
 ### 5. Approve Application
 ```bash
-curl -X PATCH "http://localhost:8080/api/jobs/1/applications/1/approve?employerId=2"
+curl -X PATCH "http://localhost:8082/api/jobs/1/applications/1/approve?employerId=2"
 ```
 → Application status: APPROVED
 
 ### 6. Create Review
 ```bash
-curl -X POST http://localhost:8080/api/reviews ^
+curl -X POST http://localhost:8082/api/reviews ^
   -H Content-Type:application/json ^
   -d @review.json
 ```
