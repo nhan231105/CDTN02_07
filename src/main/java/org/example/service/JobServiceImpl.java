@@ -115,6 +115,11 @@ public class JobServiceImpl implements JobService {
         }
 
         JobStatus status = JobStatus.valueOf(newStatus.toUpperCase());
+        boolean validTransition = (job.getStatus() == JobStatus.OPEN && status == JobStatus.FILLED)
+                || (job.getStatus() == JobStatus.FILLED && status == JobStatus.COMPLETED);
+        if (!validTransition) {
+            throw new RuntimeException("Chuyen trang thai khong hop le: " + job.getStatus() + " -> " + status);
+        }
         job.setStatus(status);
 
         Job updatedJob = jobRepository.save(job);

@@ -14,38 +14,36 @@ export const API_ENDPOINTS = {
   JOBS_CREATE: '/jobs',
   JOBS_GET: (id) => `/jobs/${id}`,
   JOBS_UPDATE: (id) => `/jobs/${id}`,
-  JOBS_DELETE: (id) => `/jobs/${id}`,
+  JOBS_STATUS: (id) => `/jobs/${id}/status`,
   JOBS_SEARCH: '/jobs/search',
   JOBS_EMPLOYER: (employerId) => `/jobs/employer/${employerId}`,
 
   // Applications
   APPLICATIONS_CREATE: (jobId) => `/jobs/${jobId}/applications`,
   APPLICATIONS_LIST: (jobId) => `/jobs/${jobId}/applications`,
-  APPLICATIONS_APPROVE: (jobId, appId) => `/jobs/${jobId}/applications/${appId}/approve`,
-  APPLICATIONS_REJECT: (jobId, appId) => `/jobs/${jobId}/applications/${appId}/reject`,
+  APPLICATIONS_DECISION: (appId) => `/applications/${appId}/decision`,
 
   // Reviews
-  REVIEWS_CREATE: '/reviews',
-  REVIEWS_BY_JOB: '/reviews',
-  REVIEWS_BY_USER: (userId) => `/reviews/user/${userId}`,
+  REVIEWS_CREATE: (jobId) => `/reviews/jobs/${jobId}`,
+  REVIEWS_BY_JOB: (jobId) => `/reviews/jobs/${jobId}`,
+  REVIEWS_BY_USER: (userId) => `/reviews/users/${userId}`,
 
   // Notifications
-  NOTIFICATIONS_LIST: '/notifications',
-  NOTIFICATIONS_READ: (id) => `/notifications/${id}/read`,
-  NOTIFICATIONS_UNREAD: '/notifications/unread',
+  NOTIFICATIONS_LIST: '/me/notifications',
+  NOTIFICATIONS_READ: (id) => `/me/notifications/${id}/read`,
+  NOTIFICATIONS_UNREAD: '/me/notifications/count/unread',
 
   // Profiles
-  STUDENT_PROFILE_GET: (userId) => `/profiles/student/${userId}`,
-  STUDENT_PROFILE_UPDATE: (userId) => `/profiles/student/${userId}`,
-  EMPLOYER_PROFILE_GET: (userId) => `/profiles/employer/${userId}`,
-  EMPLOYER_PROFILE_UPDATE: (userId) => `/profiles/employer/${userId}`,
+  STUDENT_PROFILE_GET: (userId) => `/profiles/students/${userId}`,
+  STUDENT_PROFILE_UPDATE: (userId) => `/profiles/students/${userId}`,
+  EMPLOYER_PROFILE_GET: (userId) => `/profiles/employers/${userId}`,
+  EMPLOYER_PROFILE_UPDATE: (userId) => `/profiles/employers/${userId}`,
 
   // Admin
-  ADMIN_JOBS_DELETE: (jobId) => `/admin/jobs/${jobId}`,
-  ADMIN_USERS_LOCK: (userId) => `/admin/users/${userId}/lock`,
-  ADMIN_USERS_UNLOCK: (userId) => `/admin/users/${userId}/unlock`,
-  ADMIN_VIOLATIONS_LIST: '/admin/violations',
-  ADMIN_VIOLATIONS_RESOLVE: (violationId) => `/admin/violations/${violationId}/resolve`,
+  ADMIN_JOBS_MODERATION: (jobId) => `/admin/jobs/${jobId}/moderation`,
+  ADMIN_USERS_STATUS: (userId) => `/admin/users/${userId}/status`,
+  ADMIN_REPORTS_LIST: '/admin/reports',
+  ADMIN_REPORTS_RESOLVE: (reportId) => `/admin/reports/${reportId}/resolve`,
 };
 
 // API Service class
@@ -121,8 +119,12 @@ class ApiService {
     return this.request('POST', API_ENDPOINTS.JOBS_CREATE, jobData);
   }
 
-  updateJob(id, jobData) {
-    return this.request('PATCH', API_ENDPOINTS.JOBS_UPDATE(id), jobData);
+  updateJob(id, employerId, jobData) {
+    return this.request('PUT', API_ENDPOINTS.JOBS_UPDATE(id), jobData, { employerId });
+  }
+
+  updateJobStatus(id, employerId, status) {
+    return this.request('PATCH', API_ENDPOINTS.JOBS_STATUS(id), { status }, { employerId });
   }
 
   searchJobs(params) {
@@ -142,21 +144,21 @@ class ApiService {
     return this.request('GET', API_ENDPOINTS.APPLICATIONS_LIST(jobId), null, { employerId });
   }
 
-  approveApplication(jobId, appId, employerId) {
-    return this.request('PATCH', API_ENDPOINTS.APPLICATIONS_APPROVE(jobId, appId), null, { employerId });
+  approveApplication(appId, employerId) {
+    return this.request('PATCH', API_ENDPOINTS.APPLICATIONS_DECISION(appId), { decision: 'APPROVED' }, { employerId });
   }
 
-  rejectApplication(jobId, appId, employerId) {
-    return this.request('PATCH', API_ENDPOINTS.APPLICATIONS_REJECT(jobId, appId), null, { employerId });
+  rejectApplication(appId, employerId) {
+    return this.request('PATCH', API_ENDPOINTS.APPLICATIONS_DECISION(appId), { decision: 'REJECTED' }, { employerId });
   }
 
   // Reviews endpoints
-  createReview(reviewData) {
-    return this.request('POST', API_ENDPOINTS.REVIEWS_CREATE, reviewData);
+  createReview(jobId, reviewerId, revieweeId, reviewData) {
+    return this.request('POST', API_ENDPOINTS.REVIEWS_CREATE(jobId), reviewData, { reviewerId, revieweeId });
   }
 
   getReviewsByJob(jobId) {
-    return this.request('GET', API_ENDPOINTS.REVIEWS_BY_JOB, null, { jobId });
+    return this.request('GET', API_ENDPOINTS.REVIEWS_BY_JOB(jobId));
   }
 
   getReviewsByUser(userId) {
@@ -169,8 +171,8 @@ class ApiService {
     return this.request('GET', API_ENDPOINTS.NOTIFICATIONS_LIST, null, allParams);
   }
 
-  markNotificationAsRead(notificationId) {
-    return this.request('PATCH', API_ENDPOINTS.NOTIFICATIONS_READ(notificationId));
+  markNotificationAsRead(notificationId, userId) {
+    return this.request('PATCH', API_ENDPOINTS.NOTIFICATIONS_READ(notificationId), null, { userId });
   }
 
   getUnreadCount(userId) {

@@ -1,5 +1,6 @@
 package org.example.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,5 +12,6 @@ import org.example.entity.ApplicationStatus;
 @AllArgsConstructor
 public class ApplicationDecisionRequest {
     @NotNull(message = "Quyết định không được để trống")
+    @JsonAlias("decision")
     private ApplicationStatus status;
 }

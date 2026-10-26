@@ -52,7 +52,7 @@ public class JobController {
         return ResponseEntity.ok(new JobDTO(job));
     }
 
-    @PatchMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ResponseEntity<JobDTO> updateJob(
             @PathVariable Long id,
             @RequestParam Long employerId,

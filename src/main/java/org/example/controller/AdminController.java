@@ -2,6 +2,7 @@ package org.example.controller;
 
 import lombok.AllArgsConstructor;
 import org.example.dto.ViolationReportDTO;
+import org.example.entity.UserStatus;
 import org.example.entity.ViolationReport;
 import org.example.service.AdminService;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,30 @@ public class AdminController {
             @PathVariable Long jobId,
             @RequestParam String reason) {
         adminService.removeJob(jobId, reason);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/jobs/{jobId}/moderation")
+    public ResponseEntity<Void> moderateJob(
+            @PathVariable Long jobId,
+            @RequestParam String reason) {
+        adminService.removeJob(jobId, reason);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/users/{userId}/status")
+    public ResponseEntity<Void> updateUserStatus(
+            @PathVariable Long userId,
+            @RequestParam UserStatus status,
+            @RequestParam(required = false) String reason) {
+        if (status == UserStatus.LOCKED) {
+            if (reason == null || reason.isBlank()) {
+                throw new IllegalArgumentException("Lý do khóa tài khoản không được để trống");
+            }
+            adminService.lockUser(userId, reason);
+        } else {
+            adminService.unlockUser(userId);
+        }
         return ResponseEntity.noContent().build();
     }
 

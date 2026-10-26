@@ -3,6 +3,8 @@ package org.example.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.CreateReviewRequest;
+import org.example.entity.Application;
+import org.example.entity.ApplicationStatus;
 import org.example.entity.Job;
 import org.example.entity.JobStatus;
 import org.example.entity.Review;
@@ -40,6 +42,25 @@ public class ReviewServiceImpl implements ReviewService {
 
         User reviewee = userRepository.findById(revieweeId)
                 .orElseThrow(() -> new UserNotFoundException("Nguoi duoc danh gia khong ton tai"));
+
+        if (reviewerId.equals(revieweeId)) {
+            throw new RuntimeException("Khong the tu danh gia chinh minh");
+        }
+
+        Long employerId = job.getEmployer().getId();
+        Long studentId;
+        if (reviewerId.equals(employerId)) {
+            studentId = revieweeId;
+        } else if (revieweeId.equals(employerId)) {
+            studentId = reviewerId;
+        } else {
+            throw new RuntimeException("Danh gia phai giua nha tuyen dung cua cong viec va sinh vien duoc duyet");
+        }
+
+        Application app = applicationService.getByJobAndStudent(jobId, studentId);
+        if (app == null || app.getStatus() != ApplicationStatus.APPROVED) {
+            throw new RuntimeException("Chi sinh vien da duoc duyet cho cong viec nay moi duoc danh gia");
+        }
 
         if (reviewRepository.findByJobAndReviewerAndReviewee(jobId, reviewerId, revieweeId).isPresent()) {
             throw new RuntimeException("Ban da danh gia nguoi nay cho cong viec nay roi");
