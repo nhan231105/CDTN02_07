@@ -1,3 +1,5 @@
+> **Đặc tả lịch sử trước triển khai 7 UC.** Giữ nguyên nội dung nguồn bên dưới để truy vết. Các câu hỏi kỹ thuật đã được xử lý theo [quyết định triển khai](../docs/DECISIONS_AND_FIXES.md); [API Contract hiện hành](../docs/API_CONTRACT.md), [ma trận yêu cầu](../docs/REQUIREMENTS_TRACEABILITY.md) và [kết quả kiểm thử](../docs/TEST_REPORT.md) là nguồn bàn giao hiện tại. Các thông tin hành chính cần xác nhận vẫn được ghi riêng, không tự sửa bản gốc.
+
 # PROJECT SPEC - Freelance / Part-time Job Marketplace for Students
 
 > Context file for GitHub Copilot. Generate code that follows this spec exactly.

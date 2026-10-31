@@ -6,14 +6,15 @@ services:
     image: mysql:8.0
     container_name: freelance-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD locally}
       MYSQL_DATABASE: freelance_marketplace
-      MYSQL_USER: freelance_user
-      MYSQL_PASSWORD: freelance_pass
+      MYSQL_USER: ${MYSQL_USER:-freelance_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD locally}
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./db/mysql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     networks:
       - freelance-network
     healthcheck:
@@ -31,11 +32,11 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: mysql
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/freelance_marketplace?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production-minimum-256-bits}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-freelance_app}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD locally}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET locally (at least 32 bytes)}
     ports:
-      - "8080:8080"
+      - "8082:8082"
     depends_on:
       mysql:
         condition: service_healthy
