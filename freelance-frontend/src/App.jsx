@@ -1,117 +1,93 @@
-import { useState } from 'react'
-import { useAuth } from './context/AuthContext'
-import './App.css'
-
-// Pages
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom'
+import { useAuth } from './context/auth'
+import Layout from './components/Layout'
+import { Empty, Loading } from './components/UI'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Jobs from './pages/Jobs'
-import EmployerDashboard from './pages/EmployerDashboard'
+import JobDetail from './pages/JobDetail'
 import StudentProfile from './pages/StudentProfile'
 import EmployerProfile from './pages/EmployerProfile'
+import EmployerDashboard from './pages/EmployerDashboard'
+import Applicants from './pages/Applicants'
+import Applications from './pages/Applications'
+import Notifications from './pages/Notifications'
 import AdminDashboard from './pages/AdminDashboard'
-
-export default function App() {
-  const { user, isAuthenticated, logout } = useAuth()
-  const [currentPage, setCurrentPage] = useState('jobs')
-
-  // Redirect based on authentication and role
-  if (!isAuthenticated) {
-    const page = currentPage
-    if (page === 'login') return <Login onSuccess={() => setCurrentPage('jobs')} onRegisterClick={() => setCurrentPage('register')} />
-    if (page === 'register') return <Register onSuccess={() => setCurrentPage('login')} onLoginClick={() => setCurrentPage('login')} />
+import './App.css'
+export function RequireAuth({ roles }) {
+  const { user, loading } = useAuth()
+  const location = useLocation()
+  if (loading) return <Loading />
+  if (!user)
     return (
-      <div className="auth-redirect">
-        <div className="auth-container">
-          <h1>Freelance Marketplace</h1>
-          <p>Sàn giao dịch việc làm cho sinh viên</p>
-          <div className="auth-buttons">
-            <button className="btn btn-primary" onClick={() => setCurrentPage('login')}>
-              Đăng Nhập
-            </button>
-            <button className="btn btn-secondary" onClick={() => setCurrentPage('register')}>
-              Đăng Ký
-            </button>
-          </div>
-        </div>
+      <Navigate
+        to="/login"
+        state={{ from: location.pathname + location.search }}
+        replace
+      />
+    )
+  if (roles && !roles.includes(user.role))
+    return (
+      <div className="container section">
+        <Empty title="Bạn không có quyền truy cập">
+          Hãy sử dụng chức năng phù hợp với tài khoản của bạn.
+        </Empty>
       </div>
     )
-  }
-
+  return <Outlet />
+}
+export function AppRoutes() {
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="header">
-        <div className="header-container">
-          <h1 className="logo">Freelance Marketplace</h1>
-          <nav className="nav">
-            {!user.role || user.role === 'STUDENT' ? (
-              <>
-                <button className={`nav-item ${currentPage === 'jobs' ? 'active' : ''}`} 
-                  onClick={() => setCurrentPage('jobs')}>
-                  Công Việc
-                </button>
-                <button className={`nav-item ${currentPage === 'profile' ? 'active' : ''}`}
-                  onClick={() => setCurrentPage('profile')}>
-                  Hồ Sơ
-                </button>
-              </>
-            ) : null}
-
-            {user.role === 'EMPLOYER' && (
-              <>
-                <button className={`nav-item ${currentPage === 'dashboard' ? 'active' : ''}`}
-                  onClick={() => setCurrentPage('dashboard')}>
-                  Dashboard
-                </button>
-                <button className={`nav-item ${currentPage === 'profile' ? 'active' : ''}`}
-                  onClick={() => setCurrentPage('profile')}>
-                  Hồ Sơ Công Ty
-                </button>
-              </>
-            )}
-
-            {user.role === 'ADMIN' && (
-              <button className={`nav-item ${currentPage === 'admin' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('admin')}>
-                Quản Lý
-              </button>
-            )}
-          </nav>
-          <div className="user-info">
-            <span>{user?.fullName}</span>
-            <button className="btn-logout" onClick={logout}>Đăng Xuất</button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="main-content">
-        {currentPage === 'jobs' && (!user.role || user.role === 'STUDENT') && (
-          <Jobs />
-        )}
-
-        {currentPage === 'dashboard' && user.role === 'EMPLOYER' && (
-          <EmployerDashboard />
-        )}
-
-        {currentPage === 'profile' && user.role === 'STUDENT' && (
-          <StudentProfile />
-        )}
-
-        {currentPage === 'profile' && user.role === 'EMPLOYER' && (
-          <EmployerProfile />
-        )}
-
-        {currentPage === 'admin' && user.role === 'ADMIN' && (
-          <AdminDashboard />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="footer">
-        <p>&copy; 2026 Freelance Marketplace. All rights reserved.</p>
-      </footer>
-    </div>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Navigate to="/jobs" replace />} />
+        <Route path="jobs" element={<Jobs />} />
+        <Route path="jobs/:id" element={<JobDetail />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route element={<RequireAuth />}>
+          <Route path="notifications" element={<Notifications />} />
+        </Route>
+        <Route element={<RequireAuth roles={['STUDENT']} />}>
+          <Route path="student/profile" element={<StudentProfile />} />
+          <Route path="student/applications" element={<Applications />} />
+        </Route>
+        <Route element={<RequireAuth roles={['EMPLOYER']} />}>
+          <Route path="employer/jobs" element={<EmployerDashboard />} />
+          <Route
+            path="employer/jobs/:id/applications"
+            element={<Applicants />}
+          />
+          <Route path="employer/profile" element={<EmployerProfile />} />
+        </Route>
+        <Route element={<RequireAuth roles={['ADMIN']} />}>
+          <Route path="admin" element={<AdminDashboard />} />
+        </Route>
+        <Route
+          path="*"
+          element={
+            <div className="container section">
+              <Empty title="Không tìm thấy trang">
+                Bạn có thể quay lại mục Khám phá việc làm.
+              </Empty>
+            </div>
+          }
+        />
+      </Route>
+    </Routes>
+  )
+}
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   )
 }

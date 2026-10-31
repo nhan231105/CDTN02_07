@@ -1,109 +1,55 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import apiService from '../api/apiService';
-
-const AuthContext = createContext(null);
-
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Load user from localStorage on mount
+import { useCallback, useEffect, useState } from 'react'
+import api, { TOKEN_KEY } from '../api/apiService'
+import { AuthContext } from './auth'
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const logout = useCallback(() => {
+    sessionStorage.removeItem(TOKEN_KEY)
+    setUser(null)
+  }, [])
+  const refresh = useCallback(async () => {
+    const response = await api.profile()
+    const profile = response.data || response
+    setUser(profile)
+    return profile
+  }, [])
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (err) {
-        console.error('Failed to parse saved user:', err);
-        localStorage.removeItem('user');
-      }
+    let active = true
+    if (sessionStorage.getItem(TOKEN_KEY)) {
+      api
+        .profile()
+        .then((response) => {
+          if (active) setUser(response.data || response)
+        })
+        .catch(() => {
+          if (active) logout()
+        })
+        .finally(() => {
+          if (active) setLoading(false)
+        })
+    } else
+      Promise.resolve().then(() => {
+        if (active) setLoading(false)
+      })
+    window.addEventListener('session-expired', logout)
+    return () => {
+      active = false
+      window.removeEventListener('session-expired', logout)
     }
-    setLoading(false);
-  }, []);
-
-  const register = async (userData) => {
-    try {
-      setError(null);
-      console.log('Registering with userData:', userData);
-      const response = await apiService.register(userData);
-      if (response.success && response.data) {
-        const newUser = {
-          id: response.data.id,
-          email: response.data.email,
-          fullName: response.data.fullName,
-          phone: response.data.phone,
-          role: response.data.role,
-        };
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        return response;
-      }
-    } catch (err) {
-      console.error('Registration error:', err);
-      const errorMsg = err.response?.data?.message || err.message || 'Đăng ký thất bại';
-      setError(errorMsg);
-      throw err;
-    }
-  };
-
+  }, [logout])
   const login = async (credentials) => {
-    try {
-      setError(null);
-      const response = await apiService.login(credentials);
-      if (response.success && response.data) {
-        const newUser = {
-          id: response.data.id,
-          email: response.data.email,
-          fullName: response.data.fullName,
-          phone: response.data.phone,
-          role: response.data.role,
-          status: response.data.status,
-        };
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        return response;
-      }
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
-
-  const isAuthenticated = !!user;
-  const isStudent = user?.role === 'STUDENT';
-  const isEmployer = user?.role === 'EMPLOYER';
-  const isAdmin = user?.role === 'ADMIN';
-
+    const response = await api.login(credentials)
+    const data = response.data || response
+    sessionStorage.setItem(TOKEN_KEY, data.accessToken)
+    setUser(data)
+    return data
+  }
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        isAuthenticated,
-        isStudent,
-        isEmployer,
-        isAdmin,
-        register,
-        login,
-        logout,
-      }}
+      value={{ user, loading, login, logout, refresh, register: api.register }}
     >
       {children}
     </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+  )
+}
