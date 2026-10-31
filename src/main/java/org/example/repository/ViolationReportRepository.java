@@ -11,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface ViolationReportRepository extends JpaRepository<ViolationReport, Long> {
     
     Page<ViolationReport> findByStatusOrderByCreatedAtDesc(ViolationStatus status, Pageable pageable);
+
+    long countByReporterId(Long reporterId);
 }

@@ -23,7 +23,7 @@ public class ReviewController {
     @PostMapping("/jobs/{jobId}")
     public ResponseEntity<ReviewDTO> createReview(
             @PathVariable Long jobId,
-            @RequestParam Long reviewerId,
+            @RequestParam(required = false) Long reviewerId,
             @RequestParam Long revieweeId,
             @Valid @RequestBody CreateReviewRequest request) {
         Review review = reviewService.createReview(jobId, reviewerId, revieweeId, request);

@@ -23,9 +23,12 @@ public class ProfileServiceImpl implements ProfileService {
     private final StudentProfileRepository studentProfileRepository;
     private final EmployerProfileRepository employerProfileRepository;
     private final UserRepository userRepository;
+    private final FileStorageService files;
 
     @Override
     public StudentProfileDTO getStudentProfile(Long studentId) {
+        org.example.security.CurrentUser.requireId(studentId);
+        org.example.security.CurrentUser.requireRole(org.example.entity.UserRole.STUDENT);
         StudentProfile profile = studentProfileRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Thong tin sinh vien khong ton tai"));
 
@@ -41,16 +44,21 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional
     public StudentProfileDTO updateStudentProfile(Long studentId, UpdateStudentProfileRequest request) {
+        org.example.security.CurrentUser.requireId(studentId);
+        org.example.security.CurrentUser.requireRole(org.example.entity.UserRole.STUDENT);
         StudentProfile profile = studentProfileRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Thong tin sinh vien khong ton tai"));
 
         if (request.getAvatarRef() != null) {
+            files.requireOwned(request.getAvatarRef(), studentId);
             profile.setAvatarRef(request.getAvatarRef());
         }
         if (request.getBio() != null) {
             profile.setBio(request.getBio());
         }
         if (request.getCvFileRef() != null) {
+            var cv = files.requireOwnedCv(request.getCvFileRef(), studentId);
+            profile.setCvOriginalName(cv.getOriginalName());
             profile.setCvFileRef(request.getCvFileRef());
         }
 
@@ -68,6 +76,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public EmployerProfileDTO getEmployerProfile(Long employerId) {
+        org.example.security.CurrentUser.requireId(employerId);
+        org.example.security.CurrentUser.requireRole(org.example.entity.UserRole.EMPLOYER);
         EmployerProfile profile = employerProfileRepository.findById(employerId)
                 .orElseThrow(() -> new RuntimeException("Thong tin nha tuyen dung khong ton tai"));
 
@@ -83,6 +93,8 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional
     public EmployerProfileDTO updateEmployerProfile(Long employerId, UpdateEmployerProfileRequest request) {
+        org.example.security.CurrentUser.requireId(employerId);
+        org.example.security.CurrentUser.requireRole(org.example.entity.UserRole.EMPLOYER);
         EmployerProfile profile = employerProfileRepository.findById(employerId)
                 .orElseThrow(() -> new RuntimeException("Thong tin nha tuyen dung khong ton tai"));
 

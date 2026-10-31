@@ -14,4 +14,7 @@ public class LoginResponse {
     private String phone;
     private String role;
     private String status;
+    private String accessToken;
+    private String tokenType;
+    private java.time.Instant expiresAt;
 }

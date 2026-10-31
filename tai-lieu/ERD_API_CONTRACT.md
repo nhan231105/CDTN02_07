@@ -1,3 +1,5 @@
+> **Tài liệu lịch sử trước triển khai 7 UC.** Nội dung bên dưới được giữ nguyên để truy vết; các mô tả chưa dùng JWT, route cũ hoặc cảnh báo frontend có thể đã lỗi thời. Hợp đồng hiện hành: [docs/API_CONTRACT.md](../docs/API_CONTRACT.md), dữ liệu: [docs/ERD.md](../docs/ERD.md), quyết định thay đổi: [docs/DECISIONS_AND_FIXES.md](../docs/DECISIONS_AND_FIXES.md). Kết quả thực chạy xem [TEST_REPORT](../docs/TEST_REPORT.md).
+
 # Thiết kế CSDL (ERD) và API Contract
 
 Dự án: Freelance Marketplace cho sinh viên. Backend Spring Boot, CSDL quan hệ (H2 khi dev, MySQL khi triển khai).

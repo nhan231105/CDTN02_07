@@ -1,200 +1,108 @@
-// API Configuration
-export const API_BASE_URL = 'http://localhost:8082/api';
-
-export const API_ENDPOINTS = {
-  // Auth
-  AUTH_REGISTER: '/auth/register',
-  AUTH_LOGIN: '/auth/login',
-  AUTH_HEALTH: '/auth/health',
-  AUTH_ADMIN_STATS: '/auth/admin/stats',
-  AUTH_SEARCH: '/auth/admin/search',
-
-  // Jobs
-  JOBS_LIST: '/jobs',
-  JOBS_CREATE: '/jobs',
-  JOBS_GET: (id) => `/jobs/${id}`,
-  JOBS_UPDATE: (id) => `/jobs/${id}`,
-  JOBS_STATUS: (id) => `/jobs/${id}/status`,
-  JOBS_SEARCH: '/jobs/search',
-  JOBS_EMPLOYER: (employerId) => `/jobs/employer/${employerId}`,
-
-  // Applications
-  APPLICATIONS_CREATE: (jobId) => `/jobs/${jobId}/applications`,
-  APPLICATIONS_LIST: (jobId) => `/jobs/${jobId}/applications`,
-  APPLICATIONS_DECISION: (appId) => `/applications/${appId}/decision`,
-
-  // Reviews
-  REVIEWS_CREATE: (jobId) => `/reviews/jobs/${jobId}`,
-  REVIEWS_BY_JOB: (jobId) => `/reviews/jobs/${jobId}`,
-  REVIEWS_BY_USER: (userId) => `/reviews/users/${userId}`,
-
-  // Notifications
-  NOTIFICATIONS_LIST: '/me/notifications',
-  NOTIFICATIONS_READ: (id) => `/me/notifications/${id}/read`,
-  NOTIFICATIONS_UNREAD: '/me/notifications/count/unread',
-
-  // Profiles
-  STUDENT_PROFILE_GET: (userId) => `/profiles/students/${userId}`,
-  STUDENT_PROFILE_UPDATE: (userId) => `/profiles/students/${userId}`,
-  EMPLOYER_PROFILE_GET: (userId) => `/profiles/employers/${userId}`,
-  EMPLOYER_PROFILE_UPDATE: (userId) => `/profiles/employers/${userId}`,
-
-  // Admin
-  ADMIN_JOBS_MODERATION: (jobId) => `/admin/jobs/${jobId}/moderation`,
-  ADMIN_USERS_STATUS: (userId) => `/admin/users/${userId}/status`,
-  ADMIN_REPORTS_LIST: '/admin/reports',
-  ADMIN_REPORTS_RESOLVE: (reportId) => `/admin/reports/${reportId}/resolve`,
-};
-
-// API Service class
-class ApiService {
-  constructor() {
-    this.baseURL = API_BASE_URL;
-  }
-
-  async request(method, endpoint, data = null, params = null) {
-    try {
-      const url = new URL(this.baseURL + endpoint);
-      
-      // Add query parameters if provided
-      if (params) {
-        Object.keys(params).forEach(key => {
-          url.searchParams.append(key, params[key]);
-        });
-      }
-
-      const options = {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-
-      // Add body for POST, PATCH, PUT requests
-      if (data && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
-        options.body = JSON.stringify(data);
-      }
-
-      const response = await fetch(url.toString(), options);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return result;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  }
-
-  // Auth endpoints
-  register(userData) {
-    return this.request('POST', API_ENDPOINTS.AUTH_REGISTER, userData);
-  }
-
-  login(credentials) {
-    return this.request('POST', API_ENDPOINTS.AUTH_LOGIN, credentials);
-  }
-
-  getHealthStatus() {
-    return this.request('GET', API_ENDPOINTS.AUTH_HEALTH);
-  }
-
-  getAdminStats() {
-    return this.request('GET', API_ENDPOINTS.AUTH_ADMIN_STATS);
-  }
-
-  // Jobs endpoints
-  getJobs(params = null) {
-    return this.request('GET', API_ENDPOINTS.JOBS_LIST, null, params);
-  }
-
-  getJob(id) {
-    return this.request('GET', API_ENDPOINTS.JOBS_GET(id));
-  }
-
-  createJob(jobData) {
-    return this.request('POST', API_ENDPOINTS.JOBS_CREATE, jobData);
-  }
-
-  updateJob(id, employerId, jobData) {
-    return this.request('PUT', API_ENDPOINTS.JOBS_UPDATE(id), jobData, { employerId });
-  }
-
-  updateJobStatus(id, employerId, status) {
-    return this.request('PATCH', API_ENDPOINTS.JOBS_STATUS(id), { status }, { employerId });
-  }
-
-  searchJobs(params) {
-    return this.request('GET', API_ENDPOINTS.JOBS_SEARCH, null, params);
-  }
-
-  getEmployerJobs(employerId) {
-    return this.request('GET', API_ENDPOINTS.JOBS_EMPLOYER(employerId));
-  }
-
-  // Applications endpoints
-  applyForJob(jobId, applicationData) {
-    return this.request('POST', API_ENDPOINTS.APPLICATIONS_CREATE(jobId), applicationData);
-  }
-
-  getJobApplications(jobId, employerId) {
-    return this.request('GET', API_ENDPOINTS.APPLICATIONS_LIST(jobId), null, { employerId });
-  }
-
-  approveApplication(appId, employerId) {
-    return this.request('PATCH', API_ENDPOINTS.APPLICATIONS_DECISION(appId), { decision: 'APPROVED' }, { employerId });
-  }
-
-  rejectApplication(appId, employerId) {
-    return this.request('PATCH', API_ENDPOINTS.APPLICATIONS_DECISION(appId), { decision: 'REJECTED' }, { employerId });
-  }
-
-  // Reviews endpoints
-  createReview(jobId, reviewerId, revieweeId, reviewData) {
-    return this.request('POST', API_ENDPOINTS.REVIEWS_CREATE(jobId), reviewData, { reviewerId, revieweeId });
-  }
-
-  getReviewsByJob(jobId) {
-    return this.request('GET', API_ENDPOINTS.REVIEWS_BY_JOB(jobId));
-  }
-
-  getReviewsByUser(userId) {
-    return this.request('GET', API_ENDPOINTS.REVIEWS_BY_USER(userId));
-  }
-
-  // Notifications endpoints
-  getNotifications(userId, params = null) {
-    const allParams = { userId, ...(params || {}) };
-    return this.request('GET', API_ENDPOINTS.NOTIFICATIONS_LIST, null, allParams);
-  }
-
-  markNotificationAsRead(notificationId, userId) {
-    return this.request('PATCH', API_ENDPOINTS.NOTIFICATIONS_READ(notificationId), null, { userId });
-  }
-
-  getUnreadCount(userId) {
-    return this.request('GET', API_ENDPOINTS.NOTIFICATIONS_UNREAD, null, { userId });
-  }
-
-  // Profiles endpoints
-  getStudentProfile(userId) {
-    return this.request('GET', API_ENDPOINTS.STUDENT_PROFILE_GET(userId));
-  }
-
-  updateStudentProfile(userId, profileData) {
-    return this.request('PATCH', API_ENDPOINTS.STUDENT_PROFILE_UPDATE(userId), profileData);
-  }
-
-  getEmployerProfile(userId) {
-    return this.request('GET', API_ENDPOINTS.EMPLOYER_PROFILE_GET(userId));
-  }
-
-  updateEmployerProfile(userId, profileData) {
-    return this.request('PATCH', API_ENDPOINTS.EMPLOYER_PROFILE_UPDATE(userId), profileData);
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+export const TOKEN_KEY = 'campuswork.token'
+export class ApiError extends Error {
+  constructor(status, data) {
+    super(data?.message || 'Không thể kết nối máy chủ. Vui lòng thử lại.')
+    this.status = status
+    this.code = data?.code
+    this.fieldErrors = data?.fieldErrors
   }
 }
-
-export default new ApiService();
+export async function request(
+  method,
+  endpoint,
+  data,
+  params,
+  { signal, blob = false } = {},
+) {
+  const url = new URL(API_BASE_URL + endpoint, window.location.origin)
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== '' && value !== null && value !== undefined)
+      url.searchParams.set(key, value)
+  })
+  const token = sessionStorage.getItem(TOKEN_KEY)
+  const headers = {}
+  if (token) headers.Authorization = 'Bearer ' + token
+  const isForm = data instanceof FormData
+  if (data != null && !isForm) headers['Content-Type'] = 'application/json'
+  const response = await fetch(url, {
+    method,
+    headers,
+    signal,
+    body: data == null ? undefined : isForm ? data : JSON.stringify(data),
+  })
+  if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+    sessionStorage.removeItem(TOKEN_KEY)
+    window.dispatchEvent(new Event('session-expired'))
+  }
+  if (response.status === 204) return null
+  if (!response.ok)
+    throw new ApiError(response.status, await response.json().catch(() => ({})))
+  return blob ? response.blob() : response.json()
+}
+export function upload(endpoint, file) {
+  const form = new FormData()
+  form.append('file', file)
+  return request('POST', endpoint, form)
+}
+export async function download(endpoint, name) {
+  const file = await request('GET', endpoint, null, null, { blob: true })
+  const url = URL.createObjectURL(file)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name || 'CV.pdf'
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+const api = {
+  register: (data) => request('POST', '/auth/register', data),
+  login: (data) => request('POST', '/auth/login', data),
+  profile: () => request('GET', '/me/profile'),
+  saveProfile: (data) => request('PUT', '/me/profile', data),
+  saveAccount: (data) => request('PATCH', '/me/account', data),
+  jobs: (params, signal) => request('GET', '/jobs', null, params, { signal }),
+  job: (id) => request('GET', '/jobs/' + id),
+  apply: (id, data) => request('POST', '/jobs/' + id + '/applications', data),
+  applications: (page) =>
+    request('GET', '/me/applications', null, { page, size: 12 }),
+  review: (id, data) =>
+    request('POST', '/applications/' + id + '/reviews', data),
+  reviews: (id) => request('GET', '/reviews/users/' + id, null, { size: 12 }),
+  notifications: (page) =>
+    request('GET', '/me/notifications', null, { page, size: 12 }),
+  unread: () => request('GET', '/me/notifications/count/unread'),
+  read: (id) => request('PATCH', '/me/notifications/' + id + '/read'),
+  employerJobs: (id, page) =>
+    request('GET', '/jobs/employer/' + id, null, { page, size: 12 }),
+  createJob: (data) => request('POST', '/jobs', data),
+  updateJob: (id, data) => request('PUT', '/jobs/' + id, data),
+  status: (id, status) =>
+    request('PATCH', '/jobs/' + id + '/status', { status }),
+  applicants: (id, page) =>
+    request('GET', '/jobs/' + id + '/applications', null, { page, size: 12 }),
+  decide: (id, decision) =>
+    request('PATCH', '/applications/' + id + '/decision', { decision }),
+  stats: () => request('GET', '/auth/admin/stats'),
+  adminUsers: (params) => request('GET', '/auth/admin/search', null, params),
+  adminSetUserStatus: (id, status, reason) =>
+    request('PATCH', '/admin/users/' + id + '/status', null, {
+      status,
+      reason,
+    }),
+  adminRemoveJob: (id, reason) =>
+    request('PATCH', '/admin/jobs/' + id + '/moderation', null, { reason }),
+  adminAllJobs: (page) =>
+    request('GET', '/admin/jobs', null, { page, size: 12 }),
+  adminRestoreJob: (id) => request('PATCH', '/admin/jobs/' + id + '/restore'),
+  adminDeleteUser: (id) => request('DELETE', '/admin/users/' + id),
+  adminReports: (page) =>
+    request('GET', '/admin/reports', null, { page, size: 12 }),
+  adminResolveReport: (id, adminAction) =>
+    request('PATCH', '/admin/reports/' + id + '/resolve', null, {
+      adminAction,
+    }),
+  adminRejectReport: (id) =>
+    request('PATCH', '/admin/reports/' + id + '/reject'),
+  submitReport: (data) => request('POST', '/reports', data),
+}
+export default api

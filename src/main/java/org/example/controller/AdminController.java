@@ -1,12 +1,15 @@
 package org.example.controller;
 
 import lombok.AllArgsConstructor;
+import org.example.dto.JobDTO;
 import org.example.dto.ViolationReportDTO;
+import org.example.entity.Job;
 import org.example.entity.UserStatus;
 import org.example.entity.ViolationReport;
 import org.example.service.AdminService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +19,12 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+
+    @GetMapping("/jobs")
+    public ResponseEntity<Page<JobDTO>> getAllJobsForModeration(@PageableDefault(size = 12) Pageable pageable) {
+        Page<Job> jobs = adminService.getAllJobsForModeration(pageable);
+        return ResponseEntity.ok(jobs.map(JobDTO::new));
+    }
 
     @DeleteMapping("/jobs/{jobId}")
     public ResponseEntity<Void> removeJob(
@@ -30,6 +39,12 @@ public class AdminController {
             @PathVariable Long jobId,
             @RequestParam String reason) {
         adminService.removeJob(jobId, reason);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/jobs/{jobId}/restore")
+    public ResponseEntity<Void> restoreJob(@PathVariable Long jobId) {
+        adminService.restoreJob(jobId);
         return ResponseEntity.noContent().build();
     }
 
@@ -63,6 +78,12 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+        adminService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/reports")
     public ResponseEntity<Page<ViolationReportDTO>> getViolationReports(Pageable pageable) {
         Page<ViolationReport> reports = adminService.getViolationReports(pageable);
@@ -84,3 +105,4 @@ public class AdminController {
         return ResponseEntity.ok(new ViolationReportDTO(report));
     }
 }
+

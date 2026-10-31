@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.Check(constraints = "rating between 1 and 5")
 @Table(name = "reviews", uniqueConstraints = {
     @UniqueConstraint(name = "uc_review_unique", columnNames = {"job_id", "reviewer_id", "reviewee_id"})
 }, indexes = {

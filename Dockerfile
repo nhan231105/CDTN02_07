@@ -23,10 +23,10 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8082
 
 # Environment variables
-ENV SPRING_PROFILES_ACTIVE=mysql
+ENV SPRING_PROFILES_ACTIVE=dev-h2
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
 # Run application

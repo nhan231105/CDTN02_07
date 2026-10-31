@@ -1,34 +1,31 @@
 package org.example.repository;
 
+import jakarta.persistence.LockModeType;
 import org.example.entity.Job;
 import org.example.entity.JobStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
+import java.util.Optional;
 
-@Repository
-public interface JobRepository extends JpaRepository<Job, Long> {
+public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
+    @Override @EntityGraph(attributePaths = {"employer"})
+    Optional<Job> findById(Long id);
+    @Override @EntityGraph(attributePaths = {"employer"})
+    Page<Job> findAll(Specification<Job> specification, Pageable pageable);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select j from Job j join fetch j.employer where j.id = :id")
+    Optional<Job> findLockedById(@Param("id") Long id);
+    @EntityGraph(attributePaths = {"employer"})
     Page<Job> findByStatusAndRemovedByAdminFalse(JobStatus status, Pageable pageable);
-    
+    @EntityGraph(attributePaths = {"employer"})
     Page<Job> findByEmployerIdAndRemovedByAdminFalse(Long employerId, Pageable pageable);
-    
-    @Query("SELECT j FROM Job j WHERE j.removedByAdmin = false " +
-           "AND (LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Job> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
-    
-    @Query("SELECT j FROM Job j WHERE j.removedByAdmin = false " +
-           "AND j.location = :location AND j.status = 'OPEN'")
-    Page<Job> findByLocation(@Param("location") String location, Pageable pageable);
-    
-    @Query("SELECT j FROM Job j WHERE j.removedByAdmin = false " +
-           "AND j.category = :category AND j.status = 'OPEN'")
-    Page<Job> findByCategory(@Param("category") String category, Pageable pageable);
-    
     List<Job> findByEmployerIdAndRemovedByAdminFalse(Long employerId);
+    long countByEmployerId(Long employerId);
+    @EntityGraph(attributePaths = {"employer"})
+    @Query("select j from Job j order by j.createdAt desc, j.id desc")
+    Page<Job> findAllForModeration(Pageable pageable);
 }

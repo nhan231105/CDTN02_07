@@ -24,66 +24,12 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<RegisterResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
-        log.info("Received registration request for email: {}", request.getEmail());
-
-        try {
-            RegisterResponse response = userService.register(request);
-            log.info("Registration successful for user: {}", response.getId());
-
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(ApiResponse.success(response, "Dang ki thanh cong"));
-        } catch (EmailAlreadyExistsException e) {
-            log.warn("Registration failed - email already exists: {}", request.getEmail());
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (PhoneAlreadyExistsException e) {
-            log.warn("Registration failed - phone already exists: {}", request.getPhone());
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            log.warn("Registration failed - invalid role: {}", request.getRole());
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("Registration failed with unexpected error", e);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Co loi xay ra trong qua trinh dang ki"));
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userService.register(request), "Đăng ký thành công"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest request) {
-        log.info("Received login request for identifier: {}", request.getIdentifier());
-
-        try {
-            LoginResponse response = userService.login(request);
-            log.info("Login successful for user: {}", response.getId());
-
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(ApiResponse.success(response, "Dang nhap thanh cong"));
-        } catch (UserNotFoundException e) {
-            log.warn("Login failed - invalid credentials for identifier: {}", request.getIdentifier());
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (RuntimeException e) {
-            log.warn("Login failed - account locked or other error: {}", e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.FORBIDDEN)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("Login failed with unexpected error", e);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Co loi xay ra trong qua trinh dang nhap"));
-        }
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.login(request), "Đăng nhập thành công"));
     }
 
     @GetMapping("/admin/search")
@@ -160,7 +106,7 @@ public class AuthController {
             stats.setTotalEmployers(totalEmployers);
             stats.setActiveUsers(activeUsers);
             stats.setLockedUsers(lockedUsers);
-            stats.setTotalUsers(totalStudents + totalEmployers);
+            stats.setTotalUsers(activeUsers + lockedUsers);
 
             log.info("Admin stats retrieved - Students: {}, Employers: {}", 
                      totalStudents, totalEmployers);

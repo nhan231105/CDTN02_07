@@ -18,7 +18,7 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<Page<NotificationDTO>> getUserNotifications(
-            @RequestParam Long userId,
+            @RequestParam(required = false) Long userId,
             Pageable pageable) {
         Page<Notification> notifications = notificationService.getUserNotifications(userId, pageable);
         Page<NotificationDTO> dtos = notifications.map(NotificationDTO::new);
@@ -34,13 +34,13 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationDTO> markAsRead(
             @PathVariable Long notificationId,
-            @RequestParam Long userId) {
+            @RequestParam(required = false) Long userId) {
         Notification notification = notificationService.markAsRead(notificationId, userId);
         return ResponseEntity.ok(new NotificationDTO(notification));
     }
 
     @GetMapping("/count/unread")
-    public ResponseEntity<Long> countUnreadNotifications(@RequestParam Long userId) {
+    public ResponseEntity<Long> countUnreadNotifications(@RequestParam(required = false) Long userId) {
         long count = notificationService.countUnreadNotifications(userId);
         return ResponseEntity.ok(count);
     }

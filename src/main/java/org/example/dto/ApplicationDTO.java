@@ -13,6 +13,11 @@ public class ApplicationDTO {
     private Long id;
     private Long jobId;
     private Long studentId;
+    private String jobTitle;
+    private String jobStatus;
+    private Long employerId;
+    private String employerName;
+    private boolean reviewSubmitted;
     private String fullName;
     private String email;
     private String phone;
@@ -27,6 +32,10 @@ public class ApplicationDTO {
         this.id = app.getId();
         this.jobId = app.getJob().getId();
         this.studentId = app.getStudent().getId();
+        this.jobTitle = app.getJob().getTitle();
+        this.jobStatus = app.getJob().getStatus().name();
+        this.employerId = app.getJob().getEmployer().getId();
+        this.employerName = app.getJob().getEmployer().getFullName();
         this.fullName = app.getFullName();
         this.email = app.getEmail();
         this.phone = app.getPhone();
