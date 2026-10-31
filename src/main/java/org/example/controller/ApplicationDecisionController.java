@@ -20,7 +20,7 @@ public class ApplicationDecisionController {
     @PatchMapping("/{applicationId}/decision")
     public ResponseEntity<ApplicationDTO> decide(
             @PathVariable Long applicationId,
-            @RequestParam Long employerId,
+            @RequestParam(required = false) Long employerId,
             @Valid @RequestBody ApplicationDecisionRequest request) {
         Application application;
         if (request.getStatus() == ApplicationStatus.APPROVED) {
@@ -30,6 +30,6 @@ public class ApplicationDecisionController {
         } else {
             throw new IllegalArgumentException("Quyết định phải là APPROVED hoặc REJECTED");
         }
-        return ResponseEntity.ok(new ApplicationDTO(application));
+        return ResponseEntity.ok(applicationService.toDto(application));
     }
 }

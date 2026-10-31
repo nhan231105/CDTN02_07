@@ -1,92 +1,43 @@
 package org.example.controller;
 
-import lombok.AllArgsConstructor;
-import org.example.dto.CreateJobRequest;
-import org.example.dto.JobDTO;
-import org.example.dto.JobStatusUpdateRequest;
-import org.example.dto.UpdateJobRequest;
-import org.example.entity.Job;
-import org.example.service.JobService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.example.dto.*;
+import org.example.service.JobService;
+import org.example.security.CurrentUser;
+import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/jobs")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class JobController {
-
     private final JobService jobService;
-
     @PostMapping
-    public ResponseEntity<JobDTO> createJob(@Valid @RequestBody CreateJobRequest request) {
-        Job job = jobService.createJob(request, request.getEmployerId());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new JobDTO(job));
+    public ResponseEntity<JobDTO> create(@Valid @RequestBody CreateJobRequest request) {
+        return ResponseEntity.status(201).body(new JobDTO(jobService.createJob(request,request.getEmployerId())));
     }
-
-    @GetMapping
-    public ResponseEntity<Page<JobDTO>> getAllJobs(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) String category,
-            Pageable pageable) {
-        // Nếu có filter thì search, không có thì lấy tất cả
-        Page<Job> jobs;
-        if (keyword != null || category != null || location != null) {
-            jobs = jobService.searchJobs(keyword, category, location, pageable);
-        } else {
-            jobs = jobService.getAllJobs(pageable);
-        }
-        Page<JobDTO> dtos = jobs.map(JobDTO::new);
-        return ResponseEntity.ok(dtos);
+    @GetMapping({"","/search"})
+    public Page<JobDTO> list(@RequestParam(required=false) String keyword,@RequestParam(required=false) String category,
+            @RequestParam(required=false) String location,@RequestParam(required=false) BigDecimal minSalary,
+            @RequestParam(required=false) BigDecimal maxSalary,@RequestParam(required=false) String workSchedule,
+            @PageableDefault(size=12) Pageable pageable) {
+        return jobService.searchJobs(keyword,category,location,minSalary,maxSalary,workSchedule,pageable).map(JobDTO::new);
     }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<JobDTO> getJobById(@PathVariable Long id) {
-        Job job = jobService.getJobById(id);
-        return ResponseEntity.ok(new JobDTO(job));
+    @GetMapping("/{id}") public JobDTO get(@PathVariable Long id) { return new JobDTO(jobService.getJobById(id)); }
+    @RequestMapping(value="/{id}",method={RequestMethod.PUT,RequestMethod.PATCH})
+    public JobDTO update(@PathVariable Long id,@RequestParam(required=false) Long employerId,@Valid @RequestBody UpdateJobRequest request) {
+        return new JobDTO(jobService.updateJob(id,employerId,request));
     }
-
-    @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
-    public ResponseEntity<JobDTO> updateJob(
-            @PathVariable Long id,
-            @RequestParam Long employerId,
-            @Valid @RequestBody UpdateJobRequest request) {
-        Job job = jobService.updateJob(id, employerId, request);
-        return ResponseEntity.ok(new JobDTO(job));
-    }
-
     @PatchMapping("/{id}/status")
-    public ResponseEntity<JobDTO> updateJobStatus(
-            @PathVariable Long id,
-            @RequestParam Long employerId,
-            @Valid @RequestBody JobStatusUpdateRequest request) {
-        Job job = jobService.updateJobStatus(id, employerId, request.getStatus().name());
-        return ResponseEntity.ok(new JobDTO(job));
+    public JobDTO status(@PathVariable Long id,@RequestParam(required=false) Long employerId,@Valid @RequestBody JobStatusUpdateRequest request) {
+        return new JobDTO(jobService.updateJobStatus(id,employerId,request.getStatus().name()));
     }
-
-    @GetMapping("/search")
-    public ResponseEntity<Page<JobDTO>> searchJobsLegacy(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) String category,
-            Pageable pageable) {
-        Page<Job> jobs = jobService.searchJobs(keyword, category, location, pageable);
-        Page<JobDTO> dtos = jobs.map(JobDTO::new);
-        return ResponseEntity.ok(dtos);
-    }
-
     @GetMapping("/employer/{employerId}")
-    public ResponseEntity<Page<JobDTO>> getEmployerJobs(
-            @PathVariable Long employerId,
-            Pageable pageable) {
-        Page<Job> jobs = jobService.getEmployerJobs(employerId, pageable);
-        Page<JobDTO> dtos = jobs.map(JobDTO::new);
-        return ResponseEntity.ok(dtos);
+    public Page<JobDTO> own(@PathVariable Long employerId,@PageableDefault(size=12) Pageable pageable) {
+        return jobService.getEmployerJobs(employerId,pageable).map(JobDTO::new);
     }
 }

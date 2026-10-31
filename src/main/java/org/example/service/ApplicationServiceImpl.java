@@ -1,154 +1,97 @@
 package org.example.service;
 
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.example.dto.CreateApplicationRequest;
-import org.example.entity.Application;
-import org.example.entity.ApplicationStatus;
-import org.example.entity.Job;
-import org.example.entity.JobStatus;
-import org.example.entity.User;
-import org.example.repository.ApplicationRepository;
-import org.example.repository.JobRepository;
-import org.example.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.example.common.DomainException;
+import org.example.dto.*;
+import org.example.entity.*;
+import org.example.repository.*;
+import org.example.security.CurrentUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
+import java.time.*;
 
 @Service
-@AllArgsConstructor
-@Slf4j
+@RequiredArgsConstructor
+@Transactional(readOnly=true)
 public class ApplicationServiceImpl implements ApplicationService {
-
     private final ApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
     private final NotificationService notificationService;
-
-    @Override
-    @Transactional
-    public Application createApplication(Long jobId, Long studentId, CreateApplicationRequest request) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Cong viec khong ton tai"));
-
-        if (!job.getStatus().equals(JobStatus.OPEN)) {
-            throw new RuntimeException("Cong viec khong nhan don ung tuyen");
-        }
-
-        if (hasApplied(jobId, studentId)) {
-            throw new RuntimeException("Ban da ung tuyen cho cong viec nay roi");
-        }
-
-        User student = userRepository.findById(studentId)
-                .orElseThrow(() -> new UserNotFoundException("Nguoi dung khong ton tai"));
-
-        Application app = new Application();
-        app.setJob(job);
-        app.setStudent(student);
-        app.setFullName(request.getFullName());
-        app.setEmail(request.getEmail());
-        app.setPhone(request.getPhone());
-        app.setCoverLetter(request.getCoverLetter());
-        app.setConsentDataUsage(request.getConsentDataUsage());
-        app.setCvFileRef(request.getCvFileRef());
-        app.setStatus(ApplicationStatus.PENDING);
-
-        Application savedApp = applicationRepository.save(app);
-        log.info("Application created - ID: {}, Job: {}, Student: {}", savedApp.getId(), jobId, studentId);
-
-        notificationService.createNotification(job.getEmployer().getId(), 
-            "Ban co don ung tuyen moi cho cong viec: " + job.getTitle(), 
-            "APPLICATION", savedApp.getId());
-
-        return savedApp;
+    private final FileStorageService fileStorageService;
+    @Override @Transactional
+    public Application createApplication(Long jobId,Long studentId,CreateApplicationRequest request) {
+        CurrentUser.requireRole(UserRole.STUDENT); CurrentUser.requireId(studentId);
+        Job job=jobRepository.findLockedById(jobId).orElseThrow(() -> new DomainException(404,"JOB_NOT_FOUND","Không tìm thấy công việc"));
+        if (job.getRemovedByAdmin() || job.getStatus()!=JobStatus.OPEN || job.getDeadline().isBefore(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))))
+            throw new DomainException(409,"JOB_NOT_OPEN","Tin không còn nhận hồ sơ");
+        if (hasApplied(jobId,CurrentUser.id())) throw new DomainException(409,"ALREADY_APPLIED","Bạn đã ứng tuyển công việc này");
+        if (!Boolean.TRUE.equals(request.getConsentDataUsage())) throw new DomainException(400,"CONSENT_REQUIRED","Bạn cần đồng ý chia sẻ hồ sơ");
+        User student=userRepository.findById(CurrentUser.id()).orElseThrow(() -> new DomainException(401,"UNAUTHENTICATED","Vui lòng đăng nhập"));
+        String cv=request.getCvFileRef();
+        if (cv==null || cv.isBlank()) cv=fileStorageService.getCurrentCv(student.getId());
+        if (cv==null || cv.isBlank()) throw new DomainException(400,"CV_REQUIRED","Vui lòng tải CV trước khi ứng tuyển");
+        fileStorageService.requireOwnedCv(cv,student.getId());
+        Application application=new Application();
+        application.setJob(job); application.setStudent(student); application.setCvFileRef(cv);
+        application.setFullName(value(request.getFullName(),student.getFullName()));
+        application.setEmail(value(request.getEmail(),student.getEmail()));
+        application.setPhone(value(request.getPhone(),student.getPhone()));
+        application.setCoverLetter(request.getCoverLetter()); application.setConsentDataUsage(true); application.setStatus(ApplicationStatus.PENDING);
+        Application saved=applicationRepository.saveAndFlush(application);
+        notificationService.createNotification(job.getEmployer().getId(),"Có ứng tuyển mới cho công việc: "+job.getTitle(),"APPLICATION",saved.getId());
+        return saved;
     }
-
+    private static String value(String candidate,String fallback) { return candidate==null || candidate.isBlank()? fallback:candidate.trim(); }
     @Override
     public Application getApplicationById(Long id) {
-        return applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Don ung tuyen khong ton tai"));
+        Application application=applicationRepository.findById(id).orElseThrow(() -> new DomainException(404,"APPLICATION_NOT_FOUND","Không tìm thấy đơn ứng tuyển"));
+        Long current=CurrentUser.id();
+        if (!application.getStudent().getId().equals(current) && !application.getJob().getEmployer().getId().equals(current))
+            throw new DomainException(403,"APPLICATION_FORBIDDEN","Bạn không có quyền xem đơn này");
+        return application;
     }
-
     @Override
-    public Page<Application> getJobApplications(Long jobId, Long employerId, Pageable pageable) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Cong viec khong ton tai"));
-
-        if (!job.getEmployer().getId().equals(employerId)) {
-            throw new RuntimeException("Ban khong co quyen xem don ung tuyen cho cong viec nay");
-        }
-
-        return applicationRepository.findByJobIdOrderByCreatedAtDesc(jobId, pageable);
+    public Page<Application> getJobApplications(Long jobId,Long employerId,Pageable pageable) {
+        CurrentUser.requireRole(UserRole.EMPLOYER); CurrentUser.requireId(employerId);
+        Job job=jobRepository.findById(jobId).orElseThrow(() -> new DomainException(404,"JOB_NOT_FOUND","Không tìm thấy công việc"));
+        if (!job.getEmployer().getId().equals(CurrentUser.id())) throw new DomainException(403,"NOT_JOB_OWNER","Bạn không sở hữu tin tuyển dụng này");
+        return applicationRepository.findByJobIdOrderByCreatedAtDesc(jobId,JobServiceImpl.page(pageable));
     }
-
     @Override
-    public Page<Application> getStudentApplications(Long studentId, Pageable pageable) {
-        return applicationRepository.findByStudentIdOrderByCreatedAtDesc(studentId, pageable);
+    public Page<Application> getStudentApplications(Long studentId,Pageable pageable) {
+        CurrentUser.requireRole(UserRole.STUDENT); CurrentUser.requireId(studentId);
+        return applicationRepository.findByStudentIdOrderByCreatedAtDesc(CurrentUser.id(),JobServiceImpl.page(pageable));
     }
-
-    @Override
-    @Transactional
-    public Application approveApplication(Long applicationId, Long employerId) {
-        Application app = getApplicationById(applicationId);
-
-        if (!app.getJob().getEmployer().getId().equals(employerId)) {
-            throw new RuntimeException("Ban khong co quyen phe duyet don ung tuyen nay");
-        }
-
-        if (!app.getStatus().equals(ApplicationStatus.PENDING)) {
-            throw new RuntimeException("Chi co the phe duyet don ung tuyen o trang thai CHO XU LY");
-        }
-
-        app.setStatus(ApplicationStatus.APPROVED);
-        app.setDecidedAt(LocalDateTime.now());
-
-        Application updated = applicationRepository.save(app);
-        log.info("Application {} approved by employer {}", applicationId, employerId);
-
-        notificationService.createNotification(app.getStudent().getId(),
-            "Don ung tuyen cua ban cho cong viec: " + app.getJob().getTitle() + " da duoc chap nhan",
-            "APPLICATION", applicationId);
-
-        return updated;
+    @Override @Transactional
+    public Application approveApplication(Long id,Long employerId) { return decide(id,employerId,ApplicationStatus.APPROVED); }
+    @Override @Transactional
+    public Application rejectApplication(Long id,Long employerId) { return decide(id,employerId,ApplicationStatus.REJECTED); }
+    private Application decide(Long id,Long supplied,ApplicationStatus decision) {
+        CurrentUser.requireRole(UserRole.EMPLOYER); CurrentUser.requireId(supplied);
+        Long jobId=applicationRepository.findJobId(id).orElseThrow(() -> new DomainException(404,"APPLICATION_NOT_FOUND","Không tìm thấy đơn ứng tuyển"));
+        Job job=jobRepository.findLockedById(jobId).orElseThrow(() -> new DomainException(404,"JOB_NOT_FOUND","Không tìm thấy công việc"));
+        if (!job.getEmployer().getId().equals(CurrentUser.id())) throw new DomainException(403,"NOT_JOB_OWNER","Bạn không sở hữu tin tuyển dụng này");
+        Application application=applicationRepository.findLockedById(id).orElseThrow(() -> new DomainException(404,"APPLICATION_NOT_FOUND","Không tìm thấy đơn ứng tuyển"));
+        if (application.getStatus()!=ApplicationStatus.PENDING) throw new DomainException(409,"APPLICATION_ALREADY_DECIDED","Đơn đã được xử lý");
+        if (job.getRemovedByAdmin() || job.getStatus()==JobStatus.COMPLETED || (decision==ApplicationStatus.APPROVED && job.getStatus()!=JobStatus.OPEN))
+            throw new DomainException(409,"JOB_NOT_OPEN","Tin không còn cho phép xử lý đơn này");
+        application.setStatus(decision); application.setDecidedAt(LocalDateTime.now());
+        Application saved=applicationRepository.saveAndFlush(application);
+        notificationService.createNotification(application.getStudent().getId(),"Đơn ứng tuyển "+job.getTitle()+(decision==ApplicationStatus.APPROVED?" đã được duyệt":" đã bị từ chối"),"APPLICATION",id);
+        return saved;
     }
-
     @Override
-    @Transactional
-    public Application rejectApplication(Long applicationId, Long employerId) {
-        Application app = getApplicationById(applicationId);
-
-        if (!app.getJob().getEmployer().getId().equals(employerId)) {
-            throw new RuntimeException("Ban khong co quyen tu choi don ung tuyen nay");
-        }
-
-        if (!app.getStatus().equals(ApplicationStatus.PENDING)) {
-            throw new RuntimeException("Chi co the tu choi don ung tuyen o trang thai CHO XU LY");
-        }
-
-        app.setStatus(ApplicationStatus.REJECTED);
-        app.setDecidedAt(LocalDateTime.now());
-
-        Application updated = applicationRepository.save(app);
-        log.info("Application {} rejected by employer {}", applicationId, employerId);
-
-        notificationService.createNotification(app.getStudent().getId(),
-            "Don ung tuyen cua ban cho cong viec: " + app.getJob().getTitle() + " da bi tu choi",
-            "APPLICATION", applicationId);
-
-        return updated;
-    }
-
+    public boolean hasApplied(Long jobId,Long studentId) { return applicationRepository.countByJobIdAndStudentId(jobId,studentId)>0; }
     @Override
-    public boolean hasApplied(Long jobId, Long studentId) {
-        return applicationRepository.countByJobIdAndStudentId(jobId, studentId) > 0;
-    }
-
+    public Application getByJobAndStudent(Long jobId,Long studentId) { return applicationRepository.findByJobIdAndStudentId(jobId,studentId).orElse(null); }
     @Override
-    public Application getByJobAndStudent(Long jobId, Long studentId) {
-        return applicationRepository.findByJobIdAndStudentId(jobId, studentId)
-                .orElse(null);
+    public ApplicationDTO toDto(Application application) {
+        ApplicationDTO dto=new ApplicationDTO(application);
+        dto.setReviewSubmitted(reviewRepository.existsByJobIdAndReviewerIdAndRevieweeId(application.getJob().getId(),application.getStudent().getId(),application.getJob().getEmployer().getId()));
+        return dto;
     }
 }

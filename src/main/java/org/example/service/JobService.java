@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 public interface JobService {
     
@@ -16,6 +17,8 @@ public interface JobService {
     
     Page<Job> searchJobs(String keyword, String category, String location, Pageable pageable);
     
+    Page<Job> searchJobs(String keyword, String category, String location, BigDecimal minSalary, BigDecimal maxSalary, String workSchedule, Pageable pageable);
+
     Page<Job> getEmployerJobs(Long employerId, Pageable pageable);
     
     Job updateJob(Long jobId, Long employerId, UpdateJobRequest request);

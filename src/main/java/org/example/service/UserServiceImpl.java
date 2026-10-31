@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@org.springframework.stereotype.Service
 @AllArgsConstructor
 @Slf4j
 @Transactional
@@ -19,11 +20,18 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final org.example.repository.StudentProfileRepository studentProfiles;
+    private final org.example.repository.EmployerProfileRepository employerProfiles;
+    private final org.example.security.JwtService jwt;
+
 
     @Override
     public RegisterResponse register(RegisterRequest request) {
         log.info("Registering new user with email: {}, phone: {}", request.getEmail(), request.getPhone());
 
+        request.setEmail(request.getEmail().trim().toLowerCase(java.util.Locale.ROOT));
+        request.setFullName(request.getFullName().trim());
+        if (request.getFullName().length() < 3) throw new org.example.common.DomainException(400,"INVALID_NAME","Họ tên cần ít nhất 3 ký tự sau khi bỏ khoảng trắng");
         // Validate email uniqueness
         if (userRepository.existsByEmail(request.getEmail())) {
             log.warn("Registration failed: Email already exists - {}", request.getEmail());
@@ -45,6 +53,7 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Invalid role. Must be STUDENT or EMPLOYER");
         }
 
+        if (role == UserRole.ADMIN) throw new org.example.common.DomainException(400,"INVALID_ROLE","Chỉ được đăng ký Sinh viên hoặc Nhà tuyển dụng");
         // Create new user
         User user = new User();
         user.setFullName(request.getFullName());
@@ -58,7 +67,12 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(hashedPassword);
 
         // Save user to database
-        User savedUser = userRepository.save(user);
+        User savedUser = userRepository.saveAndFlush(user);
+        if (role == UserRole.STUDENT) {
+            var profile = new org.example.entity.StudentProfile(); profile.setUser(savedUser); studentProfiles.save(profile);
+        } else {
+            var profile = new org.example.entity.EmployerProfile(); profile.setUser(savedUser); profile.setOrgName(savedUser.getFullName()); employerProfiles.save(profile);
+        }
         log.info("User registered successfully: ID={}, Email={}, Phone={}", 
                  savedUser.getId(), savedUser.getEmail(), savedUser.getPhone());
 
@@ -80,22 +94,17 @@ public class UserServiceImpl implements UserService {
         log.info("Login attempt with identifier: {}", request.getIdentifier());
 
         // Find user by email or phone
-        User user = userRepository.findByEmailOrPhone(request.getIdentifier())
+        User user = userRepository.findByEmailOrPhone(request.getIdentifier().trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> {
                     log.warn("Login failed: User not found - {}", request.getIdentifier());
                     return new UserNotFoundException("Ten dang nhap hoac mat khau chua dung");
                 });
 
-        // Check if user is locked
-        if (user.getStatus() == UserStatus.LOCKED) {
-            log.warn("Login failed: User account locked - ID={}", user.getId());
-            throw new RuntimeException("Tai khoan nay da bi khoa. Ly do: " + user.getLockReason());
-        }
-
-        // Verify password using BCrypt
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            log.warn("Login failed: Invalid password - Email={}", user.getEmail());
-            throw new UserNotFoundException("Ten dang nhap hoac mat khau chua dung");
+            throw new org.example.common.DomainException(401,"INVALID_CREDENTIALS","Tên đăng nhập hoặc mật khẩu chưa đúng");
+        }
+        if (user.getStatus() == UserStatus.LOCKED) {
+            throw new org.example.common.DomainException(403,"ACCOUNT_LOCKED","Tài khoản đã bị khóa");
         }
 
         log.info("User logged in successfully: ID={}, Email={}", user.getId(), user.getEmail());
@@ -108,7 +117,8 @@ public class UserServiceImpl implements UserService {
         response.setPhone(user.getPhone());
         response.setRole(user.getRole().name());
         response.setStatus(user.getStatus().name());
-
+        var expiresAt = jwt.expiresAt(); response.setAccessToken(jwt.issue(user, expiresAt));
+        response.setTokenType("Bearer"); response.setExpiresAt(expiresAt);
         return response;
     }
 

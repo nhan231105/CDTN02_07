@@ -24,6 +24,7 @@ public class JobDTO {
     private LocalDate deadline;
     private String status;
     private Long employerId;
+    private String employerName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -40,6 +41,7 @@ public class JobDTO {
         this.deadline = job.getDeadline();
         this.status = job.getStatus().name();
         this.employerId = job.getEmployer().getId();
+        this.employerName = job.getEmployer().getFullName();
         this.createdAt = job.getCreatedAt();
         this.updatedAt = job.getUpdatedAt();
     }

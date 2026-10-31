@@ -9,6 +9,8 @@ public interface ReviewService {
     
     Review createReview(Long jobId, Long reviewerId, Long revieweeId, CreateReviewRequest request);
     
+    Review createApplicationReview(Long applicationId, CreateReviewRequest request);
+
     Review getReviewById(Long id);
     
     Page<Review> getJobReviews(Long jobId, Pageable pageable);

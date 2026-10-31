@@ -18,6 +18,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
+    @Size(max = 150, message = "Email không được vượt quá 150 ký tự")
     private String email;
 
     @NotBlank(message = "Số điện thoại không được để trống")
@@ -25,7 +26,8 @@ public class RegisterRequest {
     private String phone;
 
     @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, max = 50, message = "Mật khẩu phải từ 6 đến 50 ký tự")
+    @Size(min = 8, max = 50, message = "Mật khẩu phải từ 8 đến 50 ký tự")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9\\s]).+$", message = "Mật khẩu cần chữ hoa, chữ thường và ký tự đặc biệt")
     private String password;
 
     @NotBlank(message = "Vai trò không được để trống")

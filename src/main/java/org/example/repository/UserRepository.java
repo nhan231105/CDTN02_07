@@ -14,6 +14,10 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.id = :id")
+    Optional<User> findLockedById(@Param("id") Long id);
+
     // Authentication & Registration queries
     Optional<User> findByEmail(String email);
 

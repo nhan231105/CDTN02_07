@@ -1,6 +1,7 @@
 package org.example.service;
 
 import org.example.dto.CreateApplicationRequest;
+import org.example.dto.ApplicationDTO;
 import org.example.entity.Application;
 import org.example.entity.Job;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,8 @@ public interface ApplicationService {
     
     Application rejectApplication(Long applicationId, Long employerId);
     
+    ApplicationDTO toDto(Application application);
+
     boolean hasApplied(Long jobId, Long studentId);
     
     Application getByJobAndStudent(Long jobId, Long studentId);
