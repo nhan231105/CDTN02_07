@@ -67,3 +67,6 @@ node_modules/
 dist/
 .idea/doNotAskNotifications.xml
 .idea/encodings.xml
+
+# IntelliJ local settings
+.idea/
