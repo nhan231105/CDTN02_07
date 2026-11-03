@@ -2,6 +2,40 @@
 
 React + Spring Boot trong repository hiện hữu. Phạm vi: đăng nhập, đăng ký, hồ sơ/CV/ảnh, tìm việc, ứng tuyển, đánh giá NTD, thông báo; có employer workflow để duyệt và hoàn thành công việc. Admin có đăng nhập/role gate và dashboard cơ bản; không tuyên bố hoàn tất FR-13…15.
 
+## 🚀 Chạy nhanh với MySQL (cho người được bàn giao project)
+
+Cách nhanh nhất: dùng sẵn file dump đầy đủ schema + dữ liệu demo, không cần tạo DB thủ công.
+
+**1) Cài đặt yêu cầu:** Java21, Node22/24, MySQL Server8 + MySQL Workbench đã cài và chạy.
+
+**2) Import database (1 lần):**
+- Mở MySQL Workbench → kết nối MySQL local của bạn.
+- Menu **Server → Data Import** → **Import from Self-Contained File** → chọn file `db/mysql/campuswork_full_dump.sql` → **Start Import**.
+- File tự tạo database `freelance_marketplace` kèm đủ bảng + 5 tài khoản demo + job mẫu.
+
+**3) Trỏ backend vào MySQL của bạn** — mở PowerShell tại thư mục gốc:
+
+```powershell
+$env:DB_URL = 'jdbc:mysql://localhost:3306/freelance_marketplace?useSSL=false&serverTimezone=UTC'
+$env:DB_USERNAME = 'root'              # đổi theo user MySQL của bạn
+$env:DB_PASSWORD = 'mat-khau-cua-ban'  # đổi theo mật khẩu MySQL của bạn
+.\mvnw.bat spring-boot:run "-Dspring-boot.run.profiles=mysql"
+```
+
+Thấy log `Tomcat started on port(s): 8082` và active profile `mysql` là backend đã chạy đúng (`http://localhost:8082/api`).
+
+**4) Chạy frontend** — mở PowerShell thứ 2:
+
+```powershell
+cd freelance-frontend
+npm ci
+npm run dev
+```
+
+Mở trình duyệt `http://localhost:5173`, đăng nhập bằng tài khoản demo (xem bảng bên dưới) là dùng được ngay.
+
+> Không muốn gõ `$env:...` mỗi lần chạy? Có thể sửa thẳng giá trị mặc định trong `src/main/resources/application-mysql.properties` (`${DB_URL:...}`, `${DB_USERNAME:...}`, `${DB_PASSWORD:...}`) — chỉ làm trên máy cá nhân, không commit file đã sửa chứa mật khẩu thật lên Git chung. Chi tiết đầy đủ: [MySQL Workbench Setup — mục 8](docs/MYSQL_WORKBENCH_SETUP.md).
+
 ## Yêu cầu
 
 - Java21; Node `^20.19.0 || >=22.12.0` theo Vite, khuyến nghị Node22/24.
