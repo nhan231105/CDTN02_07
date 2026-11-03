@@ -46,6 +46,28 @@ export default function Notifications() {
       setBusy(null)
     }
   }
+  const markAll = async () => {
+    setError('')
+    try {
+      await api.readAll()
+      await load()
+      window.dispatchEvent(new Event('notifications-updated'))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+  const target = (n) => {
+    if (user.role === 'ADMIN') return ['/admin', 'Mở trang quản trị →']
+    if (user.role === 'EMPLOYER' && n.relatedType === 'INVITATION')
+      return ['/employer/talent', 'Xem kho ứng viên →']
+    if (user.role === 'EMPLOYER')
+      return ['/employer/jobs', 'Xem tin tuyển dụng →']
+    if (n.relatedType === 'INVITATION')
+      return ['/student/invitations', 'Xem lời mời →']
+    if (n.relatedType === 'JOB' && n.relatedId)
+      return ['/jobs/' + n.relatedId, 'Xem việc làm →']
+    return ['/student/applications', 'Xem đơn ứng tuyển →']
+  }
   return (
     <div className="container section narrow">
       <div className="section-heading">
@@ -56,9 +78,14 @@ export default function Notifications() {
             Kết quả ứng tuyển và những cập nhật dành cho bạn.
           </p>
         </div>
-        <button className="btn secondary" onClick={load}>
-          ↻ Làm mới
-        </button>
+        <div className="inline-actions">
+          <button className="btn secondary" onClick={markAll}>
+            Đánh dấu tất cả đã đọc
+          </button>
+          <button className="btn secondary" onClick={load}>
+            ↻ Làm mới
+          </button>
+        </div>
       </div>
       <Feedback error={error} />
       {loading ? (
@@ -72,7 +99,7 @@ export default function Notifications() {
               }
               key={n.id}
             >
-              <span className="notification-symbol">↗</span>
+              <span className="notification-symbol">•</span>
               <div>
                 <p>{n.message}</p>
                 <small>
@@ -80,17 +107,7 @@ export default function Notifications() {
                   {n.status === 'UNREAD' ? 'Chưa đọc' : 'Đã đọc'}
                 </small>
                 <div className="notification-actions">
-                  <Link
-                    to={
-                      user.role === 'EMPLOYER'
-                        ? '/employer/jobs'
-                        : user.role === 'ADMIN'
-                          ? '/admin'
-                          : '/student/applications'
-                    }
-                  >
-                    Xem đơn ứng tuyển →
-                  </Link>
+                  <Link to={target(n)[0]}>{target(n)[1]}</Link>
                   {n.status === 'UNREAD' && (
                     <button
                       className="text-button"

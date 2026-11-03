@@ -61,4 +61,10 @@ public class Application {
 
     @Column
     private LocalDateTime decidedAt;
+
+    @Column
+    private LocalDateTime viewedAt;
+
+    @Column
+    private LocalDateTime withdrawnAt;
 }

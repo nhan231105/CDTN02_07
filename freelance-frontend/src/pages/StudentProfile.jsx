@@ -1,16 +1,18 @@
+import { useMessage } from '../context/toast'
 import { useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
 import api, { download, request, upload } from '../api/apiService'
 import { useAuth } from '../context/auth'
 import { Feedback, Field, Loading } from '../components/UI'
-import { strongPassword } from '../utils/format'
+import MapPicker from '../components/MapPicker'
+import { shiftLabels, strongPassword } from '../utils/format'
 export default function StudentProfile({ employer = false }) {
   const { refresh, logout } = useAuth()
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [form, setForm] = useState({})
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [, setMessage] = useMessage()
   const [busy, setBusy] = useState(false)
   const [account, setAccount] = useState({
     email: '',
@@ -29,6 +31,21 @@ export default function StudentProfile({ employer = false }) {
       orgName: p.orgName || '',
       address: p.address || '',
       description: p.description || '',
+      school: p.school || '',
+      major: p.major || '',
+      studyYear: p.studyYear || '',
+      skills: p.skills || '',
+      preferredArea: p.preferredArea || '',
+      lat: p.lat ?? null,
+      lng: p.lng ?? null,
+      availableShifts: p.availableShifts || [],
+      openToWork: !!p.openToWork,
+      examMode: !!p.examMode,
+      examStartDate: p.examStartDate || '',
+      examEndDate: p.examEndDate || '',
+      website: p.website || '',
+      industry: p.industry || '',
+      companySize: p.companySize || '',
     })
     return p
   }, [])
@@ -67,7 +84,13 @@ export default function StudentProfile({ employer = false }) {
   const save = (e) => {
     e.preventDefault()
     run(async () => {
-      await api.saveProfile(form)
+      await api.saveProfile({
+        ...form,
+        openToWork: form.openToWork && form.availableShifts.length > 0,
+        studyYear: form.studyYear ? Number(form.studyYear) : null,
+        examStartDate: form.examStartDate || null,
+        examEndDate: form.examEndDate || null,
+      })
       await load()
       await refresh()
       setMessage('Đã lưu hồ sơ thành công.')
@@ -145,7 +168,7 @@ export default function StudentProfile({ employer = false }) {
           </p>
         </div>
       </div>
-      <Feedback error={error} message={message} />
+      <Feedback error={error} />
       <div className="profile-layout">
         <aside className="surface profile-summary">
           <div className="profile-avatar">
@@ -170,6 +193,17 @@ export default function StudentProfile({ employer = false }) {
             </label>
           )}
           {!employer && <small>PNG, JPG · tối đa 2 MB</small>}
+          {profile.completeness != null && (
+            <div className="completeness">
+              <div className="progress" aria-label="Mức độ hoàn thiện hồ sơ">
+                <span style={{ width: profile.completeness + '%' }} />
+              </div>
+              <strong>Hồ sơ hoàn thiện {profile.completeness}%</strong>
+              {profile.missingFields?.length > 0 && (
+                <small>Còn thiếu: {profile.missingFields.join(', ')}</small>
+              )}
+            </div>
+          )}
           <div className="profile-contact">
             <span>✉ {profile.email}</span>
             <span>☎ {profile.phone}</span>
@@ -213,7 +247,50 @@ export default function StudentProfile({ employer = false }) {
                       }
                     />
                   </Field>
+                  <Field id="industry" label="Lĩnh vực hoạt động">
+                    <input
+                      id="industry"
+                      value={form.industry}
+                      maxLength={100}
+                      onChange={(e) =>
+                        setForm({ ...form, industry: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field id="companySize" label="Quy mô nhân sự">
+                    <select
+                      id="companySize"
+                      value={form.companySize}
+                      onChange={(e) =>
+                        setForm({ ...form, companySize: e.target.value })
+                      }
+                    >
+                      <option value="">Chọn quy mô</option>
+                      {['1-10', '10-50', '50-200', '200+'].map((x) => (
+                        <option key={x} value={x + ' nhân viên'}>
+                          {x} nhân viên
+                        </option>
+                      ))}
+                      {form.companySize &&
+                        !/^(1-10|10-50|50-200|200\+) nhân viên$/.test(
+                          form.companySize,
+                        ) && <option>{form.companySize}</option>}
+                    </select>
+                  </Field>
+                  <Field id="website" label="Website">
+                    <input
+                      id="website"
+                      type="url"
+                      placeholder="https://"
+                      value={form.website}
+                      maxLength={255}
+                      onChange={(e) =>
+                        setForm({ ...form, website: e.target.value })
+                      }
+                    />
+                  </Field>
                   <Field id="description" label="Giới thiệu công ty">
+                    {' '}
                     <textarea
                       id="description"
                       rows={5}
@@ -225,19 +302,192 @@ export default function StudentProfile({ employer = false }) {
                   </Field>
                 </>
               ) : (
-                <Field
-                  id="bio"
-                  label="Giới thiệu bản thân"
-                  hint="Chia sẻ kỹ năng, trải nghiệm và định hướng của bạn."
-                >
-                  <textarea
+                <>
+                  <div className="form-grid">
+                    <Field id="school" label="Trường đang học">
+                      <input
+                        id="school"
+                        maxLength={150}
+                        value={form.school}
+                        onChange={(e) =>
+                          setForm({ ...form, school: e.target.value })
+                        }
+                      />
+                    </Field>
+                    <Field id="major" label="Ngành học">
+                      <input
+                        id="major"
+                        maxLength={150}
+                        value={form.major}
+                        onChange={(e) =>
+                          setForm({ ...form, major: e.target.value })
+                        }
+                      />
+                    </Field>
+                  </div>
+                  <div className="form-grid">
+                    <Field id="studyYear" label="Năm học">
+                      <select
+                        id="studyYear"
+                        value={form.studyYear}
+                        onChange={(e) =>
+                          setForm({ ...form, studyYear: e.target.value })
+                        }
+                      >
+                        <option value="">Chọn năm</option>
+                        {[1, 2, 3, 4, 5].map((y) => (
+                          <option key={y} value={y}>
+                            Năm {y}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <div className="field">
+                    <label>Nơi ở / khu vực muốn làm việc</label>
+                    <MapPicker
+                      value={
+                        form.lat != null
+                          ? { lat: form.lat, lng: form.lng }
+                          : null
+                      }
+                      onChange={(p) =>
+                        setForm((f) => ({
+                          ...f,
+                          lat: p.lat,
+                          lng: p.lng,
+                          preferredArea: p.label || f.preferredArea,
+                        }))
+                      }
+                    />
+                    <small>
+                      {form.preferredArea
+                        ? 'Khu vực: ' + form.preferredArea + '. '
+                        : ''}
+                      CampusWork dùng vị trí này để gợi ý việc gần bạn và tính
+                      độ phù hợp. Nhà tuyển dụng chỉ thấy tên khu vực, không
+                      thấy vị trí chính xác.
+                    </small>
+                  </div>
+                  <Field
+                    id="skills"
+                    label="Kỹ năng"
+                    hint="Ngăn cách bằng dấu phẩy, VD: Giao tiếp, Excel, Tiếng Anh"
+                  >
+                    <input
+                      id="skills"
+                      maxLength={500}
+                      value={form.skills}
+                      onChange={(e) =>
+                        setForm({ ...form, skills: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <fieldset className="check-group">
+                    <legend>Ca có thể làm việc</legend>
+                    {Object.entries(shiftLabels).map(([k, v]) => (
+                      <label className="check-label" key={k}>
+                        <input
+                          type="checkbox"
+                          checked={form.availableShifts.includes(k)}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              availableShifts: e.target.checked
+                                ? [...form.availableShifts, k]
+                                : form.availableShifts.filter((x) => x !== k),
+                            })
+                          }
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </fieldset>
+                  <label
+                    className={'open-work' + (form.openToWork ? ' on' : '')}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.openToWork}
+                      disabled={!form.availableShifts.length}
+                      onChange={(e) =>
+                        setForm({ ...form, openToWork: e.target.checked })
+                      }
+                    />
+                    <span className="open-work-switch" />
+                    <span>
+                      <strong>Đang tìm việc</strong>
+                      <small>
+                        {form.availableShifts.length
+                          ? 'Nhà tuyển dụng có thể thấy tên, trường, kỹ năng và ca làm của bạn để gửi lời mời. SĐT và email luôn được ẩn.'
+                          : 'Hãy chọn ít nhất một ca có thể làm để bật tính năng này.'}
+                      </small>
+                    </span>
+                  </label>
+                  <label
+                    className={
+                      'open-work exam-mode' + (form.examMode ? ' on' : '')
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.examMode}
+                      onChange={(e) =>
+                        setForm({ ...form, examMode: e.target.checked })
+                      }
+                    />
+                    <span className="open-work-switch" />
+                    <span>
+                      <strong>Chế độ mùa thi</strong>
+                      <small>
+                        Tạm ẩn bớt gợi ý việc làm mới để bạn tập trung ôn thi.
+                        Có thể đặt sẵn khoảng ngày để tự bật/tắt đúng kỳ thi.
+                      </small>
+                    </span>
+                  </label>
+                  {form.examMode && (
+                    <div className="exam-mode-range">
+                      <Field id="examStartDate" label="Từ ngày">
+                        <input
+                          id="examStartDate"
+                          type="date"
+                          value={form.examStartDate}
+                          onChange={(e) =>
+                            setForm({ ...form, examStartDate: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field id="examEndDate" label="Đến ngày">
+                        <input
+                          id="examEndDate"
+                          type="date"
+                          value={form.examEndDate}
+                          onChange={(e) =>
+                            setForm({ ...form, examEndDate: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <small className="exam-mode-hint">
+                        Để trống nếu muốn tự tắt thủ công thay vì theo ngày.
+                      </small>
+                    </div>
+                  )}
+                  <Field
                     id="bio"
-                    rows={5}
-                    maxLength={2000}
-                    value={form.bio}
-                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                  />
-                </Field>
+                    label="Giới thiệu bản thân"
+                    hint="Chia sẻ kỹ năng, trải nghiệm và định hướng của bạn."
+                  >
+                    <textarea
+                      id="bio"
+                      rows={5}
+                      maxLength={2000}
+                      value={form.bio}
+                      onChange={(e) =>
+                        setForm({ ...form, bio: e.target.value })
+                      }
+                    />
+                  </Field>
+                </>
               )}
               <button className="btn primary" disabled={busy}>
                 {busy ? 'Đang lưu…' : 'Lưu hồ sơ'}

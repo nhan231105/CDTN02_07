@@ -31,4 +31,24 @@ public class EmployerProfile {
 
     @Column(length = 255)
     private String logoRef;
+
+    @Column(length = 255)
+    private String website;
+
+    @Column(length = 100)
+    private String industry;
+
+    @Column(length = 50)
+    private String companySize;
+
+    @Column(length = 255)
+    private String coverRef;
+
+    @Column(length = 150)
+    private String tagline;
+
+    private Integer foundedYear;
+
+    @Column(length = 600)
+    private String benefits;
 }

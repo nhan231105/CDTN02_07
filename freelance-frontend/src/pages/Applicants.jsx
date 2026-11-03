@@ -1,4 +1,5 @@
-import { date } from '../utils/format'
+import { useMessage } from '../context/toast'
+import { date, shiftLabels } from '../utils/format'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import api, { download } from '../api/apiService'
@@ -17,7 +18,7 @@ export default function Applicants() {
   const [number, setNumber] = useState(0)
   const [job, setJob] = useState(null)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [, setMessage] = useMessage()
   const [loading, setLoading] = useState(true)
   const [decision, setDecision] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -91,7 +92,7 @@ export default function Applicants() {
         </div>
         {job && <Status value={job.status} />}
       </div>
-      <Feedback error={error} message={message} />
+      <Feedback error={error} />
       {loading ? (
         <Loading />
       ) : page?.content?.length ? (
@@ -113,6 +114,41 @@ export default function Applicants() {
                 <Status value={app.status} />
               </div>
               <p className="muted">Nộp ngày {date(app.createdAt)}</p>
+              {(app.studentSchool || app.studentMajor || app.studentSkills) && (
+                <dl className="student-facts">
+                  {app.studentSchool && (
+                    <>
+                      <dt>Trường</dt>
+                      <dd>
+                        {app.studentSchool}
+                        {app.studentYear ? ' · Năm ' + app.studentYear : ''}
+                      </dd>
+                    </>
+                  )}
+                  {app.studentMajor && (
+                    <>
+                      <dt>Ngành</dt>
+                      <dd>{app.studentMajor}</dd>
+                    </>
+                  )}
+                  {app.studentSkills && (
+                    <>
+                      <dt>Kỹ năng</dt>
+                      <dd>{app.studentSkills}</dd>
+                    </>
+                  )}
+                  {app.studentShifts?.length > 0 && (
+                    <>
+                      <dt>Ca có thể làm</dt>
+                      <dd>
+                        {app.studentShifts
+                          .map((s) => shiftLabels[s] || s)
+                          .join(', ')}
+                      </dd>
+                    </>
+                  )}
+                </dl>
+              )}
               {app.coverLetter && <blockquote>{app.coverLetter}</blockquote>}
               <div className="card-actions">
                 <button

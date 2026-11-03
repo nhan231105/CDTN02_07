@@ -19,6 +19,9 @@ public interface JobService {
     
     Page<Job> searchJobs(String keyword, String category, String location, BigDecimal minSalary, BigDecimal maxSalary, String workSchedule, Pageable pageable);
 
+    Page<Job> searchJobs(org.example.dto.JobSearchCriteria criteria, Pageable pageable);
+    Page<org.example.dto.JobDTO> nearby(double lat, double lng, double radiusKm, Pageable pageable);
+
     Page<Job> getEmployerJobs(Long employerId, Pageable pageable);
     
     Job updateJob(Long jobId, Long employerId, UpdateJobRequest request);

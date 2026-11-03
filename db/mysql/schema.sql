@@ -27,6 +27,15 @@ CREATE TABLE IF NOT EXISTS student_profiles (
   bio TEXT,
   cv_file_ref VARCHAR(255),
   cv_original_name VARCHAR(255),
+  school VARCHAR(150),
+  major VARCHAR(150),
+  study_year INT,
+  skills VARCHAR(500),
+  available_shifts VARCHAR(100),
+  preferred_area VARCHAR(100),
+  open_to_work BOOLEAN NOT NULL DEFAULT FALSE,
+  lat DOUBLE,
+  lng DOUBLE,
   CONSTRAINT fk_student_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
@@ -36,6 +45,13 @@ CREATE TABLE IF NOT EXISTS employer_profiles (
   address VARCHAR(255),
   description TEXT,
   logo_ref VARCHAR(255),
+  website VARCHAR(255),
+  industry VARCHAR(100),
+  company_size VARCHAR(50),
+  cover_ref VARCHAR(255),
+  tagline VARCHAR(150),
+  founded_year INT,
+  benefits VARCHAR(600),
   CONSTRAINT fk_employer_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
@@ -64,6 +80,18 @@ CREATE TABLE IF NOT EXISTS jobs (
   location VARCHAR(100),
   work_schedule VARCHAR(200),
   deadline DATE NOT NULL,
+  job_type VARCHAR(20) NOT NULL DEFAULT 'PART_TIME',
+  pay_type VARCHAR(20) NOT NULL DEFAULT 'HOURLY',
+  shifts VARCHAR(100),
+  hours_per_week INT,
+  no_experience_required BOOLEAN NOT NULL DEFAULT FALSE,
+  student_friendly BOOLEAN NOT NULL DEFAULT TRUE,
+  address VARCHAR(255),
+  start_date DATE,
+  duration_months INT,
+  headcount INT NOT NULL DEFAULT 1,
+  lat DOUBLE,
+  lng DOUBLE,
   status ENUM('OPEN','FILLED','COMPLETED') NOT NULL,
   removed_by_admin BOOLEAN NOT NULL DEFAULT FALSE,
   removal_reason VARCHAR(500),
@@ -77,6 +105,17 @@ CREATE TABLE IF NOT EXISTS jobs (
   CONSTRAINT ck_job_salary CHECK (salary IS NULL OR salary >= 0)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS saved_jobs (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  student_id BIGINT NOT NULL,
+  job_id BIGINT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT uk_saved_job_student UNIQUE (student_id,job_id),
+  INDEX idx_saved_student (student_id),
+  CONSTRAINT fk_saved_student FOREIGN KEY (student_id) REFERENCES users(id),
+  CONSTRAINT fk_saved_job FOREIGN KEY (job_id) REFERENCES jobs(id)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS applications (
   id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   job_id BIGINT NOT NULL,
@@ -87,9 +126,11 @@ CREATE TABLE IF NOT EXISTS applications (
   phone VARCHAR(20) NOT NULL,
   cover_letter TEXT,
   consent_data_usage BOOLEAN NOT NULL DEFAULT FALSE,
-  status ENUM('PENDING','APPROVED','REJECTED') NOT NULL,
+  status ENUM('PENDING','APPROVED','REJECTED','WITHDRAWN') NOT NULL,
   created_at DATETIME(6) NOT NULL,
   decided_at DATETIME(6),
+  viewed_at DATETIME(6),
+  withdrawn_at DATETIME(6),
   CONSTRAINT uc_job_student UNIQUE (job_id,student_id),
   INDEX idx_app_job (job_id),
   INDEX idx_app_student (student_id),
@@ -150,4 +191,20 @@ CREATE TABLE IF NOT EXISTS violation_reports (
 
 
 SHOW TABLES FROM freelance_marketplace;
-  
+
+CREATE TABLE IF NOT EXISTS invitations (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  employer_id BIGINT NOT NULL,
+  student_id BIGINT NOT NULL,
+  job_id BIGINT NOT NULL,
+  message VARCHAR(500),
+  status ENUM('PENDING','ACCEPTED','DECLINED') NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  responded_at DATETIME(6),
+  CONSTRAINT uc_invite_job_student UNIQUE (job_id,student_id),
+  INDEX idx_invite_student (student_id),
+  INDEX idx_invite_employer (employer_id),
+  CONSTRAINT fk_invite_employer FOREIGN KEY (employer_id) REFERENCES users(id),
+  CONSTRAINT fk_invite_student FOREIGN KEY (student_id) REFERENCES users(id),
+  CONSTRAINT fk_invite_job FOREIGN KEY (job_id) REFERENCES jobs(id)
+) ENGINE=InnoDB;

@@ -20,6 +20,8 @@ public interface ApplicationService {
     Application approveApplication(Long applicationId, Long employerId);
     
     Application rejectApplication(Long applicationId, Long employerId);
+
+    Application withdrawApplication(Long applicationId);
     
     ApplicationDTO toDto(Application application);
 

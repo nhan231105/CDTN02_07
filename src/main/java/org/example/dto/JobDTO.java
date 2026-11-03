@@ -27,10 +27,37 @@ public class JobDTO {
     private String employerName;
     private Boolean removedByAdmin;
     private String removalReason;
+    private String jobType;
+    private String payType;
+    private java.util.List<String> shifts;
+    private Integer hoursPerWeek;
+    private Boolean noExperienceRequired;
+    private Boolean studentFriendly;
+    private String address;
+    private LocalDate startDate;
+    private Integer durationMonths;
+    private Integer headcount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Double lat;
+    private Double lng;
+    private Double distanceKm;
+    private String riskLevel;
+    private java.util.List<String> riskFlags;
 
     public JobDTO(Job job) {
+        this.jobType = job.getJobType() == null ? null : job.getJobType().name();
+        this.payType = job.getPayType() == null ? null : job.getPayType().name();
+        this.shifts = job.getShifts() == null || job.getShifts().isBlank() ? java.util.List.of() : java.util.Arrays.asList(job.getShifts().split(","));
+        this.hoursPerWeek = job.getHoursPerWeek();
+        this.noExperienceRequired = job.getNoExperienceRequired();
+        this.studentFriendly = job.getStudentFriendly();
+        this.address = job.getAddress();
+        this.startDate = job.getStartDate();
+        this.durationMonths = job.getDurationMonths();
+        this.headcount = job.getHeadcount();
+        this.lat = job.getLat();
+        this.lng = job.getLng();
         this.id = job.getId();
         this.title = job.getTitle();
         this.description = job.getDescription();
@@ -48,5 +75,8 @@ public class JobDTO {
         this.removalReason = job.getRemovalReason();
         this.createdAt = job.getCreatedAt();
         this.updatedAt = job.getUpdatedAt();
+        org.example.util.ScamSignals.Result risk = org.example.util.ScamSignals.analyze(job);
+        this.riskLevel = risk.level().name();
+        this.riskFlags = risk.flags();
     }
 }

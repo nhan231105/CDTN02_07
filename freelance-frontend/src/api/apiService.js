@@ -104,5 +104,23 @@ const api = {
   adminRejectReport: (id) =>
     request('PATCH', '/admin/reports/' + id + '/reject'),
   submitReport: (data) => request('POST', '/reports', data),
+  savedJobs: (page) =>
+    request('GET', '/me/saved-jobs', null, { page, size: 12 }),
+  savedJobIds: () => request('GET', '/me/saved-jobs/ids'),
+  saveJob: (id) => request('PUT', '/me/saved-jobs/' + id),
+  unsaveJob: (id) => request('DELETE', '/me/saved-jobs/' + id),
+  withdraw: (id) => request('PATCH', '/applications/' + id + '/withdraw'),
+  readAll: () => request('PATCH', '/me/notifications/read-all'),
+  employerPublic: (id) => request('GET', '/employers/' + id + '/public'),
+  nearbyJobs: (params, signal) =>
+    request('GET', '/jobs/nearby', null, params, { signal }),
+  talent: (params) => request('GET', '/talent', null, params),
+  talentDetail: (id) => request('GET', '/talent/' + id),
+  invite: (data) => request('POST', '/invitations', data),
+  sentInvitations: (page) =>
+    request('GET', '/invitations/sent', null, { page, size: 12 }),
+  myInvitations: () => request('GET', '/me/invitations'),
+  respondInvitation: (id, accept) =>
+    request('PATCH', '/invitations/' + id + '/respond', { accept }),
 }
 export default api

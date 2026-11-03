@@ -12,13 +12,18 @@ import { Empty, Loading } from './components/UI'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Jobs from './pages/Jobs'
+import Landing from './pages/Landing'
+import EmployerPublic from './pages/EmployerPublic'
 import JobDetail from './pages/JobDetail'
 import StudentProfile from './pages/StudentProfile'
 import EmployerProfile from './pages/EmployerProfile'
 import EmployerDashboard from './pages/EmployerDashboard'
 import Applicants from './pages/Applicants'
 import Applications from './pages/Applications'
+import SavedJobs from './pages/SavedJobs'
 import Notifications from './pages/Notifications'
+import StudentInvitations from './pages/StudentInvitations'
+import Talent from './pages/Talent'
 import AdminDashboard from './pages/AdminDashboard'
 import './App.css'
 export function RequireAuth({ roles }) {
@@ -43,13 +48,19 @@ export function RequireAuth({ roles }) {
     )
   return <Outlet />
 }
+export function HomeGate() {
+  const { loading } = useAuth()
+  if (loading) return <Loading />
+  return <Landing />
+}
 export function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/jobs" replace />} />
+        <Route index element={<HomeGate />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="jobs/:id" element={<JobDetail />} />
+        <Route path="employers/:id" element={<EmployerPublic />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route element={<RequireAuth />}>
@@ -58,6 +69,8 @@ export function AppRoutes() {
         <Route element={<RequireAuth roles={['STUDENT']} />}>
           <Route path="student/profile" element={<StudentProfile />} />
           <Route path="student/applications" element={<Applications />} />
+          <Route path="student/saved" element={<SavedJobs />} />
+          <Route path="student/invitations" element={<StudentInvitations />} />
         </Route>
         <Route element={<RequireAuth roles={['EMPLOYER']} />}>
           <Route path="employer/jobs" element={<EmployerDashboard />} />
@@ -66,6 +79,7 @@ export function AppRoutes() {
             element={<Applicants />}
           />
           <Route path="employer/profile" element={<EmployerProfile />} />
+          <Route path="employer/talent" element={<Talent />} />
         </Route>
         <Route element={<RequireAuth roles={['ADMIN']} />}>
           <Route path="admin" element={<AdminDashboard />} />

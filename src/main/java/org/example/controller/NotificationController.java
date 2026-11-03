@@ -25,6 +25,11 @@ public class NotificationController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PatchMapping("/read-all")
+    public ResponseEntity<java.util.Map<String, Integer>> markAllAsRead(@RequestParam(required = false) Long userId) {
+        return ResponseEntity.ok(java.util.Map.of("updated", notificationService.markAllAsRead(userId)));
+    }
+
     @GetMapping("/{notificationId}")
     public ResponseEntity<NotificationDTO> getNotificationById(@PathVariable Long notificationId) {
         Notification notification = notificationService.getNotificationById(notificationId);

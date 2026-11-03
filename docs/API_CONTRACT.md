@@ -60,3 +60,12 @@ JobDTO gồm `id,title,description,requirements,benefits,category,location,workS
 ApplicationDTO gồm ID job/student, `jobTitle,jobStatus,employerId,employerName,reviewSubmitted`, contact/CV/coverLetter, `status,consentDataUsage,createdAt,decidedAt`. Reviewer/reviewee của canonical review được suy ra ở backend, không cho giả danh bằng payload.
 
 Giữ alias `/notifications`, `/profiles/students/{id}`, `/profiles/employers/{id}`, `/reviews/jobs/{id}` và các quyết định cũ nếu source đã có, nhưng áp dụng JWT/role/ownership tương đương. Admin endpoints hiện hữu chỉ ADMIN và không thuộc tuyên bố hoàn thành toàn bộ FR-13…15.
+
+## Nhóm 1 – bổ sung (part-time)
+- `GET /jobs` thêm filter: `jobType`, `shift`, `payType`, `maxHoursPerWeek`, `noExperience`, `studentFriendly`, `sortBy` (`salary_desc|salary_asc|...`).
+- `PUT|DELETE /me/saved-jobs/{jobId}`, `GET /me/saved-jobs`, `GET /me/saved-jobs/ids` (STUDENT).
+- `PATCH /applications/{id}/withdraw` (STUDENT, chỉ khi PENDING) → status `WITHDRAWN`. `ApplicationDTO` có `viewedAt`, `withdrawnAt` và thông tin sinh viên.
+- `PATCH /me/notifications/read-all`.
+- `GET /employers/{id}/public` (không cần đăng nhập): thông tin nhà tuyển dụng, điểm đánh giá, tin đang mở.
+- `GET/PUT /me/profile` thêm trường sinh viên (school, major, studyYear, skills, availableShifts, preferredArea), nhà tuyển dụng (website, industry, companySize), `completeness`, `missingFields`.
+- DB đã tồn tại: chạy `db/mysql/migration_02_profiles_tracking.sql` một lần.

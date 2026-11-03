@@ -18,5 +18,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("select r from Review r where r.job.id = :jobId and r.reviewer.id = :reviewerId and r.reviewee.id = :revieweeId")
     Optional<Review> findByJobAndReviewerAndReviewee(@Param("jobId") Long jobId, @Param("reviewerId") Long reviewerId, @Param("revieweeId") Long revieweeId);
     boolean existsByJobIdAndReviewerIdAndRevieweeId(Long jobId, Long reviewerId, Long revieweeId);
+    @Query("select avg(r.rating) from Review r where r.reviewee.id = :id and r.isHidden = false")
+    Double averageRating(@Param("id") Long id);
+    long countByRevieweeIdAndIsHiddenFalse(Long revieweeId);
     long countByReviewerIdOrRevieweeId(Long reviewerId, Long revieweeId);
 }

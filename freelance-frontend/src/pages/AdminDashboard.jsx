@@ -1,3 +1,4 @@
+import { useMessage } from '../context/toast'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import api from '../api/apiService'
 import {
@@ -25,7 +26,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [tab, setTab] = useState('users')
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [, setMessage] = useMessage()
   const [loadingStats, setLoadingStats] = useState(true)
 
   const [users, setUsers] = useState([])
@@ -223,7 +224,7 @@ export default function AdminDashboard() {
       <p className="muted">
         Quản lý tài khoản, kiểm duyệt tin tuyển dụng và xử lý báo cáo vi phạm.
       </p>
-      <Feedback error={error} message={message} />
+      <Feedback error={error} />
 
       {stats ? (
         <div className="stats-grid">

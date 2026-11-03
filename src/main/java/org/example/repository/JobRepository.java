@@ -26,6 +26,12 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     List<Job> findByEmployerIdAndRemovedByAdminFalse(Long employerId);
     long countByEmployerId(Long employerId);
     @EntityGraph(attributePaths = {"employer"})
+    @Query("select j from Job j where j.employer.id = :employerId and j.status = org.example.entity.JobStatus.OPEN and j.removedByAdmin = false and j.deadline >= :today order by j.createdAt desc, j.id desc")
+    Page<Job> findOpenByEmployer(@Param("employerId") Long employerId, @Param("today") java.time.LocalDate today, Pageable pageable);
+    @EntityGraph(attributePaths = {"employer"})
+    @Query("select j from Job j where j.status = org.example.entity.JobStatus.OPEN and j.removedByAdmin = false and j.deadline >= :today and j.lat between :minLat and :maxLat and j.lng between :minLng and :maxLng")
+    List<Job> findOpenInBox(@Param("today") java.time.LocalDate today, @Param("minLat") double minLat, @Param("maxLat") double maxLat, @Param("minLng") double minLng, @Param("maxLng") double maxLng);
+    @EntityGraph(attributePaths = {"employer"})
     @Query("select j from Job j order by j.createdAt desc, j.id desc")
     Page<Job> findAllForModeration(Pageable pageable);
 }

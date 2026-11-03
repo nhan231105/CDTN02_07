@@ -59,6 +59,42 @@ public class Job {
     private LocalDate deadline;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private JobType jobType = JobType.PART_TIME;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PayType payType = PayType.HOURLY;
+
+    // Comma separated JobShift names, e.g. MORNING,EVENING
+    @Column(length = 100)
+    private String shifts;
+
+    private Integer hoursPerWeek;
+
+    @Column(nullable = false)
+    private Boolean noExperienceRequired = false;
+
+    @Column(nullable = false)
+    private Boolean studentFriendly = true;
+
+    @Column(length = 255)
+    private String address;
+
+    private LocalDate startDate;
+
+    private Integer durationMonths;
+
+    @Column(nullable = false)
+    private Integer headcount = 1;
+
+    @Column(name = "lat")
+    private Double lat;
+
+    @Column(name = "lng")
+    private Double lng;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private JobStatus status = JobStatus.OPEN;
 

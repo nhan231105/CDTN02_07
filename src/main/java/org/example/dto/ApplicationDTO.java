@@ -27,7 +27,17 @@ public class ApplicationDTO {
     private Boolean consentDataUsage;
     private LocalDateTime createdAt;
     private LocalDateTime decidedAt;
-
+    private LocalDateTime viewedAt;
+    private LocalDateTime withdrawnAt;
+    private String studentSchool;
+    private String studentMajor;
+    private Integer studentYear;
+    private String studentSkills;
+    private java.util.List<String> studentShifts;
+    private String studentAvatarRef;
+    private String jobLocation;
+    private java.math.BigDecimal jobSalary;
+    private String jobPayType;
     public ApplicationDTO(Application app) {
         this.id = app.getId();
         this.jobId = app.getJob().getId();
@@ -45,5 +55,10 @@ public class ApplicationDTO {
         this.consentDataUsage = app.getConsentDataUsage();
         this.createdAt = app.getCreatedAt();
         this.decidedAt = app.getDecidedAt();
+        this.viewedAt = app.getViewedAt();
+        this.withdrawnAt = app.getWithdrawnAt();
+        this.jobLocation = app.getJob().getLocation();
+        this.jobSalary = app.getJob().getSalary();
+        this.jobPayType = app.getJob().getPayType() == null ? null : app.getJob().getPayType().name();
     }
 }

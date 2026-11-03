@@ -70,3 +70,8 @@ dist/
 
 # IntelliJ local settings
 .idea/
+
+# Local DB credentials
+/config/application-mysql.properties
+
+tmp-*

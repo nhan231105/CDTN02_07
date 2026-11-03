@@ -75,7 +75,7 @@ export default function Register() {
               className={form.role === 'STUDENT' ? 'selected' : ''}
               onClick={() => setForm({ ...form, role: 'STUDENT' })}
             >
-              ↗ Tôi tìm việc
+              Tôi tìm việc
             </button>
             <button
               type="button"

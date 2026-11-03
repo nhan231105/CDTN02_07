@@ -1,4 +1,5 @@
-import { date } from '../utils/format'
+import { useMessage } from '../context/toast'
+import { date, datetime, salaryText } from '../utils/format'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { download } from '../api/apiService'
@@ -16,11 +17,13 @@ export default function Applications() {
   const [number, setNumber] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [, setMessage] = useMessage()
   const [selected, setSelected] = useState(null)
   const [rating, setRating] = useState(5)
   const [content, setContent] = useState('')
   const [busy, setBusy] = useState(false)
+  const [filter, setFilter] = useState('')
+  const [withdrawing, setWithdrawing] = useState(null)
   const load = useCallback(async () => {
     setError('')
     setLoading(true)
@@ -50,6 +53,24 @@ export default function Applications() {
       setBusy(false)
     }
   }
+  const withdraw = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      await api.withdraw(withdrawing.id)
+      setWithdrawing(null)
+      setMessage('Đã rút đơn ứng tuyển.')
+      await load()
+    } catch (err) {
+      setError(err.message)
+      setWithdrawing(null)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const visible = (page?.content || []).filter(
+    (a) => !filter || a.status === filter,
+  )
   return (
     <div className="container section narrow">
       <div className="section-heading">
@@ -59,22 +80,45 @@ export default function Applications() {
           <p className="muted">Mỗi đơn ứng tuyển là một cơ hội mới.</p>
         </div>
         <Link className="btn primary" to="/jobs">
-          Tìm việc mới ↗
+          Tìm việc mới
         </Link>
       </div>
-      <Feedback error={!selected ? error : ''} message={message} />
+      <Feedback error={!selected ? error : ''} />
+      <div className="tabs" role="tablist" aria-label="Lọc theo trạng thái">
+        {[
+          ['', 'Tất cả'],
+          ['PENDING', 'Chờ duyệt'],
+          ['APPROVED', 'Đã duyệt'],
+          ['REJECTED', 'Từ chối'],
+          ['WITHDRAWN', 'Đã rút'],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            role="tab"
+            aria-selected={filter === value}
+            className={'tab' + (filter === value ? ' active' : '')}
+            onClick={() => setFilter(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {loading ? (
         <Loading />
-      ) : page?.content?.length ? (
+      ) : visible.length ? (
         <div className="stack">
-          {page.content.map((app) => (
+          {visible.map((app) => (
             <article className="surface application-card" key={app.id}>
               <div className="application-top">
                 <div>
                   <p className="company-name">
                     {app.employerName || 'Nhà tuyển dụng'}
                   </p>
-                  <h2>{app.jobTitle || 'Công việc #' + app.jobId}</h2>
+                  <h2>
+                    <Link to={'/jobs/' + app.jobId}>
+                      {app.jobTitle || 'Công việc #' + app.jobId}
+                    </Link>
+                  </h2>
                 </div>
                 <Status value={app.status} />
               </div>
@@ -84,6 +128,39 @@ export default function Applications() {
                   Công việc: <Status value={app.jobStatus} />
                 </span>
               </div>
+              <p className="muted small-text">
+                {app.jobLocation} ·{' '}
+                {salaryText({ salary: app.jobSalary, payType: app.jobPayType })}
+              </p>
+              <ol className="timeline">
+                <li className="done">Đã nộp · {datetime(app.createdAt)}</li>
+                <li className={app.viewedAt ? 'done' : ''}>
+                  {app.viewedAt
+                    ? 'Nhà tuyển dụng đã xem · ' + datetime(app.viewedAt)
+                    : 'Chờ nhà tuyển dụng xem hồ sơ'}
+                </li>
+                {app.status === 'WITHDRAWN' ? (
+                  <li className="done">
+                    Bạn đã rút đơn · {datetime(app.withdrawnAt)}
+                  </li>
+                ) : (
+                  <li
+                    className={
+                      app.status === 'APPROVED'
+                        ? 'done ok'
+                        : app.status === 'REJECTED'
+                          ? 'done bad'
+                          : ''
+                    }
+                  >
+                    {app.status === 'APPROVED'
+                      ? 'Được duyệt · ' + datetime(app.decidedAt)
+                      : app.status === 'REJECTED'
+                        ? 'Bị từ chối · ' + datetime(app.decidedAt)
+                        : 'Chờ kết quả'}
+                  </li>
+                )}
+              </ol>
               {app.coverLetter && <p className="muted">{app.coverLetter}</p>}
               <div className="card-actions">
                 <button
@@ -97,6 +174,17 @@ export default function Applications() {
                 >
                   ▤ Xem CV đã nộp
                 </button>
+                {app.status === 'PENDING' && (
+                  <button
+                    className="btn secondary small"
+                    onClick={() => {
+                      setError('')
+                      setWithdrawing(app)
+                    }}
+                  >
+                    Rút đơn
+                  </button>
+                )}
                 {app.reviewSubmitted ? (
                   <span className="review-sent">★ Đã đánh giá</span>
                 ) : app.status === 'APPROVED' &&
@@ -134,6 +222,25 @@ export default function Applications() {
         </button>
       )}
       <Pagination page={page} onChange={setNumber} />
+      {withdrawing && (
+        <Modal title="Rút đơn ứng tuyển" onClose={() => setWithdrawing(null)}>
+          <p>
+            Bạn chắc chắn muốn rút đơn <strong>{withdrawing.jobTitle}</strong>?
+            Sau khi rút, bạn không thể ứng tuyển lại tin này.
+          </p>
+          <div className="modal-actions">
+            <button
+              className="btn secondary"
+              onClick={() => setWithdrawing(null)}
+            >
+              Quay lại
+            </button>
+            <button className="btn primary" disabled={busy} onClick={withdraw}>
+              {busy ? 'Đang xử lý…' : 'Xác nhận rút đơn'}
+            </button>
+          </div>
+        </Modal>
+      )}
       {selected && (
         <Modal
           title="Đánh giá nhà tuyển dụng"

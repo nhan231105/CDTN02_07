@@ -16,13 +16,14 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 
-@Component @Profile({"dev-h2","h2"}) @RequiredArgsConstructor
+@Component @Profile({"dev-h2","h2","mysql"}) @RequiredArgsConstructor
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.demo.seed",havingValue="true",matchIfMissing=true)
 public class DemoDataInitializer implements CommandLineRunner {
     private final UserRepository users;private final StudentProfileRepository students;private final EmployerProfileRepository employers;
     private final JobRepository jobs;private final ApplicationRepository applications;private final NotificationRepository notifications;private final ReviewRepository reviews;
-    private final BCryptPasswordEncoder passwords;private final FileStorageService files;
+    private final BCryptPasswordEncoder passwords;private final FileStorageService files;private final org.springframework.core.env.Environment env;
     @Override @Transactional public void run(String... args)throws Exception{
+        if(env.acceptsProfiles(org.springframework.core.env.Profiles.of("mysql"))&&!env.getProperty("app.demo.seed","false").equals("true"))return;
         if(users.count()>0)return;
         User studentA=user("Minh Anh Nguyễn","student.a@demo.local","0900000001",UserRole.STUDENT);
         User studentB=user("Hoàng Bảo Trần","student.b@demo.local","0900000002",UserRole.STUDENT);
@@ -33,18 +34,37 @@ public class DemoDataInitializer implements CommandLineRunner {
             pdf.addPage(new PDPage());pdf.save(output);byte[] bytes=output.toByteArray();
             files.upload(studentA.getId(),new DemoFile(bytes),false);files.upload(studentB.getId(),new DemoFile(bytes),false);
         }
-        String[] titles={"Thiết kế giao diện website","Lập trình React bán thời gian","Trợ lý nội dung sáng tạo","Chuyên viên Marketing online","Thiết kế bộ nhận diện thương hiệu","Phát triển ứng dụng Java","Biên tập video mạng xã hội","Lập trình website thương mại","Trợ lý nghiên cứu thị trường","Thiết kế poster sự kiện","Phát triển API Spring Boot","Cộng tác viên truyền thông"};
-        String[] categories={"Design","Development","Marketing"};String[] locations={"TP. Hồ Chí Minh","Hà Nội","Đà Nẵng"};
+        // title, category, location, address, pay type, pay, hours/week, shifts, no experience
+        String[][] data={
+            {"Nhân viên phục vụ quán cà phê","Hospitality","TP. Hồ Chí Minh","25 Nguyễn Huệ, Quận 1","HOURLY","28000","20","MORNING,AFTERNOON","true"},
+            {"Phục vụ nhà hàng ca tối","Hospitality","TP. Hồ Chí Minh","102 Võ Văn Tần, Quận 3","HOURLY","30000","18","EVENING","true"},
+            {"Thu ngân cửa hàng tiện lợi","Sales","Hà Nội","18 Cầu Giấy","HOURLY","27000","24","AFTERNOON,EVENING","true"},
+            {"Nhân viên bán hàng cuối tuần","Sales","Đà Nẵng","Vincom Ngô Quyền, Sơn Trà","SHIFT","180000","12","WEEKEND","true"},
+            {"Gia sư Toán lớp 9","Education","Hà Nội","Khu đô thị Mỹ Đình","HOURLY","150000","6","EVENING,WEEKEND","false"},
+            {"Gia sư Tiếng Anh giao tiếp","Education","TP. Hồ Chí Minh","Quận Bình Thạnh","HOURLY","180000","8","EVENING","false"},
+            {"Trợ giảng lớp lập trình thiếu nhi","Education","Đà Nẵng","Hải Châu","SHIFT","200000","8","WEEKEND","false"},
+            {"Cộng tác viên Content mạng xã hội","Marketing","TP. Hồ Chí Minh","Làm việc từ xa","PROJECT","3000000","10","FLEXIBLE","false"},
+            {"Thiết kế poster, banner part-time","Design","Hà Nội","Làm việc từ xa","PROJECT","2500000","12","FLEXIBLE","false"},
+            {"Quay dựng video TikTok cho quán","Marketing","TP. Hồ Chí Minh","Quận Phú Nhuận","PROJECT","4000000","10","FLEXIBLE","false"},
+            {"Lập trình web React bán thời gian","Development","TP. Hồ Chí Minh","Làm việc từ xa","MONTHLY","6000000","20","FLEXIBLE","false"},
+            {"Hỗ trợ kiểm thử phần mềm (QA)","Development","Hà Nội","Tòa nhà FPT, Cầu Giấy","MONTHLY","4500000","16","AFTERNOON","false"},
+            {"Phát tờ rơi và PG sự kiện","Sales","Đà Nẵng","Công viên APEC","DAILY","300000","8","WEEKEND","true"},
+            {"Nhân viên đóng gói đơn hàng online","Sales","TP. Hồ Chí Minh","Kho Tân Bình","HOURLY","26000","20","MORNING,EVENING","true"},
+            {"Trực page và chốt đơn","Marketing","Hà Nội","Làm việc từ xa","HOURLY","25000","15","EVENING","true"},
+            {"Pha chế trà sữa","Hospitality","Đà Nẵng","Lê Duẩn, Hải Châu","HOURLY","27000","20","AFTERNOON,EVENING","true"}
+        };
         List<Job> created=new ArrayList<>();
         for(int i=0;i<24;i++){
-            Job job=new Job();job.setEmployer(i%2==0?employerA:employerB);job.setTitle(titles[i%titles.length]+(i>=12?" • Dự án "+(i+1):""));
-            job.setCategory(categories[i%3]);job.setLocation(locations[(i/3)%3]);job.setSalary(BigDecimal.valueOf(1500000L+(i%8)*500000L));
-            job.setDescription("Tham gia dự án thực tế cùng đội ngũ trẻ, được hướng dẫn và phát triển kỹ năng chuyên môn. Công việc phù hợp sinh viên, thời gian linh hoạt và quy trình cộng tác rõ ràng.");
-            job.setRequirements("Chủ động, có trách nhiệm và mong muốn học hỏi. Có sản phẩm cá nhân là một lợi thế.");job.setBenefits("Lịch linh hoạt, hỗ trợ chuyên môn, xác nhận kinh nghiệm và cơ hội cộng tác lâu dài.");
-            job.setWorkSchedule(i%2==0?"Linh hoạt":"Bán thời gian");job.setDeadline(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(30));
+            String[] d=data[i%data.length];
+            Job job=new Job();job.setEmployer(i%2==0?employerA:employerB);job.setTitle(d[0]+(i>=data.length?" (đợt "+(i/data.length+1)+")":""));
+            job.setCategory(d[1]);job.setLocation(d[2]);job.setAddress(d[3]);job.setPayType(PayType.valueOf(d[4]));job.setSalary(new BigDecimal(d[5]));
+            job.setJobType(JobType.PART_TIME);job.setHoursPerWeek(Integer.valueOf(d[6]));job.setShifts(d[7]);job.setNoExperienceRequired(Boolean.parseBoolean(d[8]));
+            job.setStudentFriendly(true);job.setHeadcount(1+i%3);job.setStartDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(7));job.setDurationMonths(3+i%4);
+            job.setDescription("Công việc phù hợp sinh viên, được hướng dẫn từ đầu, lịch làm linh hoạt theo thời khóa biểu. Môi trường thân thiện, trả lương đúng hẹn.");
+            job.setRequirements("Sinh viên các trường đại học, cao đẳng; nghiêm túc, đúng giờ và có tinh thần học hỏi.");job.setBenefits("Lương đúng hạn, được đào tạo, xác nhận kinh nghiệm và cơ hội làm lâu dài.");
+            job.setWorkSchedule(d[7].contains("FLEXIBLE")?"Linh hoạt":d[6]+" giờ/tuần");job.setDeadline(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(30));
             job.setStatus(i<16?JobStatus.OPEN:i<20?JobStatus.FILLED:JobStatus.COMPLETED);created.add(jobs.save(job));
-        }
-        Application pending=application(created.get(0),studentB,ApplicationStatus.PENDING);
+        }        Application pending=application(created.get(0),studentB,ApplicationStatus.PENDING);
         Application approved=application(created.get(20),studentA,ApplicationStatus.APPROVED);
         application(created.get(21),studentA,ApplicationStatus.APPROVED);
         application(created.get(1),studentA,ApplicationStatus.REJECTED);

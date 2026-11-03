@@ -21,6 +21,8 @@ public class MeController {
     @PatchMapping("/me/account")public Map<String,Object> account(@Valid @RequestBody AccountUpdateRequest request){return profiles.account(request);}
     @PostMapping("/me/cv")public ResponseEntity<?> uploadCv(@RequestParam("file")MultipartFile file){CurrentUser.requireRole(UserRole.STUDENT);return ResponseEntity.status(201).body(files.metadata(files.upload(CurrentUser.id(),file,false)));}
     @PostMapping("/me/avatar")public ResponseEntity<?> uploadAvatar(@RequestParam("file")MultipartFile file){CurrentUser.requireRole(UserRole.STUDENT);return ResponseEntity.status(201).body(files.metadata(files.upload(CurrentUser.id(),file,true)));}
+    @PostMapping("/me/logo")public ResponseEntity<?> uploadLogo(@RequestParam("file")MultipartFile file){CurrentUser.requireRole(UserRole.EMPLOYER);return ResponseEntity.status(201).body(files.metadata(files.upload(CurrentUser.id(),file,"logo")));}
+    @PostMapping("/me/cover")public ResponseEntity<?> uploadCover(@RequestParam("file")MultipartFile file){CurrentUser.requireRole(UserRole.EMPLOYER);return ResponseEntity.status(201).body(files.metadata(files.upload(CurrentUser.id(),file,"cover")));}
     @GetMapping("/me/cv")public ResponseEntity<byte[]> cv(){return download(files.requireOwnedCv(files.getCurrentCv(CurrentUser.id()),CurrentUser.id()),false);}
     @GetMapping("/me/avatar")public ResponseEntity<byte[]> avatar(){var p=students.findById(CurrentUser.id()).orElseThrow();return download(files.requireOwned(p.getAvatarRef(),CurrentUser.id()),true);}
     @GetMapping("/applications/{id}/cv")public ResponseEntity<byte[]> applicationCv(@PathVariable Long id){

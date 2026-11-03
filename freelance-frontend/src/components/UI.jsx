@@ -7,14 +7,11 @@ export function Status({ value }) {
     </span>
   )
 }
-export function Feedback({ error, message }) {
+// Thông báo thành công hiển thị bằng toast (xem useMessage), chỉ lỗi nằm tại chỗ.
+export function Feedback({ error }) {
   return error ? (
     <div className="feedback error" role="alert">
       {error}
-    </div>
-  ) : message ? (
-    <div className="feedback success" role="status">
-      {message}
     </div>
   ) : null
 }

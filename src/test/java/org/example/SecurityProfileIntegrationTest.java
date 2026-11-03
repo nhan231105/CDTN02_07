@@ -84,8 +84,45 @@ class SecurityProfileIntegrationTest {
         mvc.perform(get("/me/avatar").header("Authorization","Bearer "+token)).andExpect(status().isOk()).andExpect(content().bytes(out.toByteArray()));
         mvc.perform(multipart("/me/avatar").file(new MockMultipartFile("file","avatar.png","image/png","not an image".getBytes())).header("Authorization","Bearer "+token)).andExpect(status().isUnsupportedMediaType());
     }
-    @Test void accountChangesRequirePasswordAndRespect48HourLimit()throws Exception{
-        var d=data("STUDENT");register(d);String token=login(d);
+    @Test void employerBrandingImagesArePublicAndStudentsCannotUpload()throws Exception{
+        var d=data("EMPLOYER");long id=register(d).get("id").asLong();String token=login(d);var out=new ByteArrayOutputStream();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(2,2,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",out);
+        mvc.perform(get("/employers/"+id+"/logo")).andExpect(status().isNotFound());
+        mvc.perform(multipart("/me/logo").file(new MockMultipartFile("file","logo.png","image/png",out.toByteArray())).header("Authorization","Bearer "+token)).andExpect(status().isCreated());
+        mvc.perform(multipart("/me/cover").file(new MockMultipartFile("file","cover.png","image/png",out.toByteArray())).header("Authorization","Bearer "+token)).andExpect(status().isCreated());
+        mvc.perform(get("/employers/"+id+"/logo")).andExpect(status().isOk()).andExpect(content().bytes(out.toByteArray()));
+        mvc.perform(get("/employers/"+id+"/cover")).andExpect(status().isOk());
+        mvc.perform(put("/me/profile").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("tagline","Cùng sinh viên lớn lên","foundedYear",2015,"benefits","Lương theo giờ|Đào tạo miễn phí")))).andExpect(status().isOk()).andExpect(jsonPath("$.benefits[1]").value("Đào tạo miễn phí"));
+        mvc.perform(get("/employers/"+id+"/public")).andExpect(status().isOk()).andExpect(jsonPath("$.tagline").value("Cùng sinh viên lớn lên")).andExpect(jsonPath("$.coverRef").isNotEmpty());
+        mvc.perform(multipart("/me/logo").file(new MockMultipartFile("file","logo.png","image/png",out.toByteArray())).header("Authorization","Bearer "+student())).andExpect(status().isForbidden());
+    }
+    @Test void talentPoolAndInvitationsFlow()throws Exception{
+        var sd=data("STUDENT");long sid=register(sd).get("id").asLong();String st=login(sd);
+        var ed=data("EMPLOYER");register(ed);String et=login(ed);
+        mvc.perform(put("/me/profile").header("Authorization","Bearer "+st).contentType("application/json").content(body(Map.of("openToWork",true)))).andExpect(status().isBadRequest());
+        mvc.perform(put("/me/profile").header("Authorization","Bearer "+st).contentType("application/json").content(body(Map.of("openToWork",true,"availableShifts",List.of("EVENING"))))).andExpect(status().isOk());
+        mvc.perform(get("/talent").header("Authorization","Bearer "+st)).andExpect(status().isForbidden());
+        mvc.perform(get("/talent").param("shift","EVENING").param("size","100").header("Authorization","Bearer "+et)).andExpect(status().isOk()).andExpect(jsonPath("$.content[?(@.id==" + sid + ")]").isNotEmpty());
+        String job=mvc.perform(post("/jobs").header("Authorization","Bearer "+et).contentType("application/json").content(body(Map.of("title","Phục vụ ca tối","description","Mô tả công việc đủ dài để hợp lệ","category","F&B","location","Da Nang","salary",30000,"workSchedule","Evening","deadline",java.time.LocalDate.now().plusDays(30).toString())))).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long jobId=json.readTree(job).get("id").asLong();
+        String inv=body(Map.of("studentId",sid,"jobId",jobId,"message","Mời bạn"));
+        mvc.perform(post("/invitations").header("Authorization","Bearer "+et).contentType("application/json").content(inv)).andExpect(status().is2xxSuccessful());
+        mvc.perform(post("/invitations").header("Authorization","Bearer "+et).contentType("application/json").content(inv)).andExpect(status().isConflict());
+        String list=mvc.perform(get("/me/invitations").header("Authorization","Bearer "+st)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        mvc.perform(get("/invitations/sent").header("Authorization","Bearer "+et)).andExpect(status().isOk());
+    }
+    @Test void nearbyJobsAreSortedByDistanceAndStudentSavesLocation()throws Exception{
+        var ed=data("EMPLOYER");register(ed);String et=login(ed);
+        String today=java.time.LocalDate.now().plusDays(20).toString();
+        for(double[] p:new double[][]{{10.80,106.70},{10.78,106.70}}){
+            mvc.perform(post("/jobs").header("Authorization","Bearer "+et).contentType("application/json").content(body(Map.of("title","Gần nhà "+p[0],"description","Mô tả công việc đủ dài để hợp lệ","category","F&B","location","TP. Hồ Chí Minh","salary",30000,"workSchedule","Evening","deadline",today,"lat",p[0],"lng",p[1])))).andExpect(status().isCreated());
+        }
+        mvc.perform(get("/jobs/nearby").param("lat","10.7769").param("lng","106.7009").param("radiusKm","5")).andExpect(status().isOk()).andExpect(jsonPath("$.content[0].title").value("Gần nhà 10.78")).andExpect(jsonPath("$.content[0].distanceKm").isNumber());
+        mvc.perform(get("/jobs/nearby").param("lat","10.7769").param("lng","106.7009").param("radiusKm","1")).andExpect(status().isOk()).andExpect(jsonPath("$.content[?(@.title=='Gần nhà 10.8')]").isEmpty());
+        mvc.perform(get("/jobs/nearby").param("lat","123").param("lng","106")).andExpect(status().isBadRequest());
+        String st=student();
+        mvc.perform(put("/me/profile").header("Authorization","Bearer "+st).contentType("application/json").content(body(Map.of("preferredArea","Quận 1, TP.HCM","lat",10.7769,"lng",106.7009)))).andExpect(status().isOk()).andExpect(jsonPath("$.lat").value(10.7769));
+    }
+    @Test void accountChangesRequirePasswordAndRespect48HourLimit()throws Exception{        var d=data("STUDENT");register(d);String token=login(d);
         mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("email","changed"+d.get("email"),"currentPassword","WrongPassword!")))).andExpect(status().isForbidden());
         mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("email","changed"+d.get("email"),"currentPassword",d.get("password"))))).andExpect(status().isOk());
         mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("phone","0800000000","currentPassword",d.get("password"))))).andExpect(status().isConflict());

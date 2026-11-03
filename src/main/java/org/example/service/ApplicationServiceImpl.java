@@ -22,6 +22,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ReviewRepository reviewRepository;
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
+    private final StudentProfileRepository studentProfiles;
     @Override @Transactional
     public Application createApplication(Long jobId,Long studentId,CreateApplicationRequest request) {
         CurrentUser.requireRole(UserRole.STUDENT); CurrentUser.requireId(studentId);
@@ -54,12 +55,30 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new DomainException(403,"APPLICATION_FORBIDDEN","Bạn không có quyền xem đơn này");
         return application;
     }
-    @Override
+    @Override @Transactional
     public Page<Application> getJobApplications(Long jobId,Long employerId,Pageable pageable) {
         CurrentUser.requireRole(UserRole.EMPLOYER); CurrentUser.requireId(employerId);
         Job job=jobRepository.findById(jobId).orElseThrow(() -> new DomainException(404,"JOB_NOT_FOUND","Không tìm thấy công việc"));
         if (!job.getEmployer().getId().equals(CurrentUser.id())) throw new DomainException(403,"NOT_JOB_OWNER","Bạn không sở hữu tin tuyển dụng này");
-        return applicationRepository.findByJobIdOrderByCreatedAtDesc(jobId,JobServiceImpl.page(pageable));
+        Page<Application> page=applicationRepository.findByJobIdOrderByCreatedAtDesc(jobId,JobServiceImpl.page(pageable));
+        for (Application a:page.getContent()) {
+            if (a.getViewedAt()==null && a.getStatus()==ApplicationStatus.PENDING) {
+                a.setViewedAt(LocalDateTime.now()); applicationRepository.save(a);
+                notificationService.createNotification(a.getStudent().getId(),"Nhà tuyển dụng đã xem hồ sơ ứng tuyển: "+job.getTitle(),"APPLICATION",a.getId());
+            }
+        }
+        return page;
+    }
+    @Override @Transactional
+    public Application withdrawApplication(Long id) {
+        CurrentUser.requireRole(UserRole.STUDENT);
+        Application application=applicationRepository.findLockedById(id).orElseThrow(() -> new DomainException(404,"APPLICATION_NOT_FOUND","Không tìm thấy đơn ứng tuyển"));
+        if (!application.getStudent().getId().equals(CurrentUser.id())) throw new DomainException(403,"APPLICATION_FORBIDDEN","Bạn không có quyền với đơn này");
+        if (application.getStatus()!=ApplicationStatus.PENDING) throw new DomainException(409,"APPLICATION_NOT_PENDING","Chỉ có thể rút đơn đang chờ duyệt");
+        application.setStatus(ApplicationStatus.WITHDRAWN); application.setWithdrawnAt(LocalDateTime.now());
+        Application saved=applicationRepository.saveAndFlush(application);
+        notificationService.createNotification(application.getJob().getEmployer().getId(),application.getFullName()+" đã rút đơn ứng tuyển: "+application.getJob().getTitle(),"APPLICATION",id);
+        return saved;
     }
     @Override
     public Page<Application> getStudentApplications(Long studentId,Pageable pageable) {
@@ -91,6 +110,11 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public ApplicationDTO toDto(Application application) {
         ApplicationDTO dto=new ApplicationDTO(application);
+        studentProfiles.findById(application.getStudent().getId()).ifPresent(p -> {
+            dto.setStudentSchool(p.getSchool()); dto.setStudentMajor(p.getMajor()); dto.setStudentYear(p.getStudyYear());
+            dto.setStudentSkills(p.getSkills()); dto.setStudentAvatarRef(p.getAvatarRef());
+            dto.setStudentShifts(p.getAvailableShifts()==null||p.getAvailableShifts().isBlank()?java.util.List.of():java.util.Arrays.asList(p.getAvailableShifts().split(",")));
+        });
         dto.setReviewSubmitted(reviewRepository.existsByJobIdAndReviewerIdAndRevieweeId(application.getJob().getId(),application.getStudent().getId(),application.getJob().getEmployer().getId()));
         return dto;
     }

@@ -24,8 +24,16 @@ public class JobController {
     public Page<JobDTO> list(@RequestParam(required=false) String keyword,@RequestParam(required=false) String category,
             @RequestParam(required=false) String location,@RequestParam(required=false) BigDecimal minSalary,
             @RequestParam(required=false) BigDecimal maxSalary,@RequestParam(required=false) String workSchedule,
+            @RequestParam(required=false) String jobType,@RequestParam(required=false) String payType,@RequestParam(required=false) String shift,
+            @RequestParam(required=false) Boolean noExperience,@RequestParam(required=false) Boolean studentFriendly,
+            @RequestParam(required=false) Integer maxHoursPerWeek,@RequestParam(required=false) String sortBy,
             @PageableDefault(size=12) Pageable pageable) {
-        return jobService.searchJobs(keyword,category,location,minSalary,maxSalary,workSchedule,pageable).map(JobDTO::new);
+        return jobService.searchJobs(new JobSearchCriteria(keyword,category,location,minSalary,maxSalary,workSchedule,jobType,payType,shift,noExperience,studentFriendly,maxHoursPerWeek,sortBy),pageable).map(JobDTO::new);
+    }
+    @GetMapping("/nearby")
+    public Page<JobDTO> nearby(@RequestParam double lat,@RequestParam double lng,@RequestParam(defaultValue="15") double radiusKm,@PageableDefault(size=12) Pageable pageable) {
+        if (lat<-90||lat>90||lng<-180||lng>180) throw new org.example.common.DomainException(400,"INVALID_LOCATION","Tọa độ không hợp lệ");
+        return jobService.nearby(lat,lng,Math.min(Math.max(radiusKm,1),100),pageable);
     }
     @GetMapping("/{id}") public JobDTO get(@PathVariable Long id) { return new JobDTO(jobService.getJobById(id)); }
     @RequestMapping(value="/{id}",method={RequestMethod.PUT,RequestMethod.PATCH})

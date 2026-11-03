@@ -26,6 +26,8 @@ public class StudentApplicationController {
     public ResponseEntity<ReviewDTO> review(@PathVariable Long id,@Valid @RequestBody CreateReviewRequest request) {
         return ResponseEntity.status(201).body(new ReviewDTO(reviewService.createApplicationReview(id,request)));
     }
+    @PatchMapping("/applications/{id}/withdraw")
+    public ApplicationDTO withdraw(@PathVariable Long id) { return applicationService.toDto(applicationService.withdrawApplication(id)); }
     @GetMapping("/applications/{id}")
     public ApplicationDTO application(@PathVariable Long id) { return applicationService.toDto(applicationService.getApplicationById(id)); }
 }

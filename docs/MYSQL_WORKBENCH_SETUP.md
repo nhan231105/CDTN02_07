@@ -95,3 +95,26 @@ API smoke tạo account/job QA mới và yêu cầu tài khoản demo B/admin t�
 - Tạo việc ID25 trên UI, xác nhận SQL có 25 jobs; sau restart backend API vẫn trả job ID25 và `totalElements=17` (chỉ OPEN). Trang chi tiết hiển thị tiếng Việt đúng dấu.
 
 Nếu kiểm thử lại trên máy khác, kết quả phụ thuộc MySQL Server, credential và dữ liệu tại máy đó. Không commit `.env` chứa mật khẩu, không đưa bản dump dữ liệu người dùng thực lên GitHub.
+
+## 8. Gửi project cho người khác chạy (import file dump có sẵn)
+
+File `db/mysql/campuswork_full_dump.sql` chứa **toàn bộ schema + dữ liệu demo hiện tại** (tài khoản demo, job mẫu...), chỉ cần import 1 lần là có y chang môi trường của bạn, không cần chạy lại `schema.sql`/`migration_*`/`seed.sql` riêng lẻ nữa.
+
+**Bước 1 – Import vào MySQL Workbench của họ:**
+1. Mở Workbench, kết nối vào MySQL Server local của họ (connection riêng, không liên quan tới connection của bạn).
+2. Menu **Server → Data Import**.
+3. Chọn **Import from Self-Contained File**, trỏ tới `db/mysql/campuswork_full_dump.sql`.
+4. Mục **Default Target Schema**: để trống (file tự tạo database tên `freelance_marketplace`) hoặc gõ tên schema khác nếu muốn đổi tên — nếu đổi tên, nhớ sửa lại `DB_URL` ở bước 2 cho khớp.
+5. Bấm **Start Import**. File có lệnh `DROP DATABASE IF EXISTS` trước khi tạo lại, nên **chỉ chạy trên máy/schema trống**, tránh mất dữ liệu cũ nếu họ đã có database trùng tên.
+
+**Bước 2 – Trỏ Spring Boot vào database vừa import:**
+Không cần sửa code; chỉ cần set biến môi trường (khuyến nghị, không commit lên Git) trước khi chạy:
+```powershell
+$env:DB_URL = 'jdbc:mysql://localhost:3306/freelance_marketplace?useSSL=false&serverTimezone=UTC'
+$env:DB_USERNAME = 'root'          # user MySQL của họ
+$env:DB_PASSWORD = 'mat-khau-cua-ho'
+.\mvnw.bat spring-boot:run "-Dspring-boot.run.profiles=mysql"
+```
+Nếu không muốn set biến môi trường mỗi lần, có thể sửa thẳng giá trị mặc định trong `src/main/resources/application-mysql.properties` (phần sau dấu `:` trong `${DB_URL:...}`, `${DB_USERNAME:...}`, `${DB_PASSWORD:...}`) — chỉ nên làm vậy trên máy cá nhân của họ, không đẩy file đã sửa chứa mật khẩu thật lên GitHub chung.
+
+Dữ liệu trong file dump là dữ liệu demo/test tự tạo cho đồ án (không chứa thông tin người dùng thật), nên chia sẻ được; nếu sau này database chứa dữ liệu thật của doanh nghiệp/sinh viên thật, không export/chia sẻ file dump đó.

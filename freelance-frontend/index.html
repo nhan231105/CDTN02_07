@@ -11,6 +11,14 @@
     />
     <title>CampusWork — Cơ hội cho bước tiến mới</title>
   </head>
+  <script>
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem('campuswork-theme') === 'light' ? 'light' : 'dark'
+    } catch (e) {
+      document.documentElement.dataset.theme = 'dark'
+    }
+  </script>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

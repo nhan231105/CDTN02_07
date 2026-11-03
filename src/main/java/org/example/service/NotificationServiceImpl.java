@@ -39,6 +39,11 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification=getNotificationById(id); notification.setStatus(NotificationStatus.READ);
         return notificationRepository.saveAndFlush(notification);
     }
+    @Override @Transactional
+    public int markAllAsRead(Long userId) {
+        CurrentUser.requireId(userId);
+        return notificationRepository.markAllRead(CurrentUser.id());
+    }
     @Override public long countUnreadNotifications(Long userId) {
         CurrentUser.requireId(userId);
         return notificationRepository.countByUserIdAndStatus(CurrentUser.id(),NotificationStatus.UNREAD);

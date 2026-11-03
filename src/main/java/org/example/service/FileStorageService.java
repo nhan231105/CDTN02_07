@@ -15,12 +15,14 @@ import java.nio.file.*;
 import java.util.*;
 @Service
 public class FileStorageService {
-    private final StoredFileRepository files; private final UserRepository users; private final StudentProfileRepository profiles; private final Path root;
-    public FileStorageService(StoredFileRepository files,UserRepository users,StudentProfileRepository profiles,@Value("${file.upload.directory:./uploads}")String directory){this.files=files;this.users=users;this.profiles=profiles;this.root=Path.of(directory).toAbsolutePath().normalize();}
+    private final StoredFileRepository files; private final UserRepository users; private final StudentProfileRepository profiles; private final EmployerProfileRepository employers; private final Path root;
+    public FileStorageService(StoredFileRepository files,UserRepository users,StudentProfileRepository profiles,EmployerProfileRepository employers,@Value("${file.upload.directory:./uploads}")String directory){this.files=files;this.users=users;this.profiles=profiles;this.employers=employers;this.root=Path.of(directory).toAbsolutePath().normalize();}
+    public StoredFile upload(Long owner,MultipartFile file,boolean avatar){return upload(owner,file,avatar?"avatar":"cv");}
     @Transactional
-    public StoredFile upload(Long owner,MultipartFile file,boolean avatar){
+    public StoredFile upload(Long owner,MultipartFile file,String kind){
+        boolean avatar=!"cv".equals(kind);
         if(file.isEmpty())throw new DomainException(400,"EMPTY_FILE","Vui lòng chọn tệp không rỗng");
-        if(file.getSize()>(avatar?2:5)*1024*1024)throw new DomainException(413,"FILE_TOO_LARGE",avatar?"Ảnh tối đa 2 MiB":"CV tối đa 5 MiB");
+        if(file.getSize()>("cover".equals(kind)?4:avatar?2:5)*1024*1024)throw new DomainException(413,"FILE_TOO_LARGE",avatar?("cover".equals(kind)?"Ảnh bìa tối đa 4 MiB":"Ảnh tối đa 2 MiB"):"CV tối đa 5 MiB");
         byte[] data;try{data=file.getBytes();}catch(IOException e){throw new DomainException(400,"FILE_READ_ERROR","Không đọc được tệp");}
         String type=file.getContentType();
         try{
@@ -43,6 +45,10 @@ public class FileStorageService {
         StoredFile stored=new StoredFile();stored.setRef(ref);stored.setOwner(users.findById(owner).orElseThrow());
         String original=Optional.ofNullable(file.getOriginalFilename()).orElse(name).replace('\\','/');original=original.substring(original.lastIndexOf('/')+1).replaceAll("[\\p{Cntrl}]","");
         stored.setOriginalName(original.isBlank()?name:original.substring(0,Math.min(original.length(),255)));stored.setContentType(type);stored.setSize(data.length);stored.setStorageName(name);files.save(stored);
+        if("logo".equals(kind)||"cover".equals(kind)){
+            var employer=employers.findById(owner).orElseThrow(()->new DomainException(404,"PROFILE_NOT_FOUND","Không tìm thấy hồ sơ"));
+            if("logo".equals(kind))employer.setLogoRef(ref);else employer.setCoverRef(ref);employers.save(employer);return stored;
+        }
         var profile=profiles.findById(owner).orElseThrow(()->new DomainException(404,"PROFILE_NOT_FOUND","Không tìm thấy hồ sơ"));
         if(avatar)profile.setAvatarRef(ref);else{profile.setCvFileRef(ref);profile.setCvOriginalName(stored.getOriginalName());}profiles.save(profile);return stored;
     }
@@ -54,6 +60,8 @@ public class FileStorageService {
         if(!"application/pdf".equals(f.getContentType()))throw new DomainException(415,"INVALID_CV","CV phải là PDF");return f;
     }
     public String getCurrentCv(Long userId){return profiles.findById(userId).map(StudentProfile::getCvFileRef).orElse(null);}
+    @Transactional(readOnly=true)
+    public StoredFile requireImage(String ref){var f=files.findById(Optional.ofNullable(ref).orElse("")).orElseThrow(()->new DomainException(404,"FILE_NOT_FOUND","Chưa có ảnh"));if(f.getContentType()==null||!f.getContentType().startsWith("image/"))throw new DomainException(404,"FILE_NOT_FOUND","Chưa có ảnh");return f;}
     @Transactional(readOnly=true)
     public StoredFile requireOwned(String ref,Long owner){var f=files.findById(Optional.ofNullable(ref).orElse("")).orElseThrow(()->new DomainException(404,"FILE_NOT_FOUND","Chưa có tệp"));if(!f.getOwner().getId().equals(owner))throw new DomainException(403,"FORBIDDEN","Tệp không thuộc tài khoản của bạn");return f;}
     public byte[] read(StoredFile file){Path path=root.resolve(file.getStorageName()).normalize();if(!path.startsWith(root))throw new DomainException(403,"INVALID_PATH","Đường dẫn không hợp lệ");try{return Files.readAllBytes(path);}catch(IOException e){throw new DomainException(404,"FILE_NOT_FOUND","Không tìm thấy tệp đã lưu");}}

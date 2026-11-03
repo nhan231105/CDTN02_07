@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth, homeFor } from '../context/auth'
 import api from '../api/apiService'
+import useScrollReveal from '../hooks/useScrollReveal'
+import ThemeToggle from './ThemeToggle'
+import MyAvatar from './MyAvatar'
 const currentYear = new Date().getFullYear()
 export default function Layout() {
+  useScrollReveal()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
@@ -42,7 +46,7 @@ export default function Layout() {
       </a>
       <header className="site-header">
         <div className="nav-wrap">
-          <Link to="/jobs" className="brand" aria-label="CampusWork trang chủ">
+          <Link to="/" className="brand" aria-label="CampusWork trang chủ">
             <span className="brand-mark">
               c<span>·</span>
             </span>
@@ -51,7 +55,16 @@ export default function Layout() {
           <nav className="main-nav" aria-label="Điều hướng chính">
             <NavLink to="/jobs">Khám phá việc làm</NavLink>
             {user?.role === 'STUDENT' && (
+              <NavLink to="/student/saved">Việc đã lưu</NavLink>
+            )}
+            {user?.role === 'STUDENT' && (
               <NavLink to="/student/applications">Đơn của tôi</NavLink>
+            )}
+            {user?.role === 'STUDENT' && (
+              <NavLink to="/student/invitations">Lời mời</NavLink>
+            )}
+            {user?.role === 'EMPLOYER' && (
+              <NavLink to="/employer/talent">Kho ứng viên</NavLink>
             )}
             {user?.role === 'EMPLOYER' && (
               <NavLink to="/employer/jobs">Quản lý tuyển dụng</NavLink>
@@ -59,6 +72,7 @@ export default function Layout() {
             {user?.role === 'ADMIN' && <NavLink to="/admin">Quản trị</NavLink>}
           </nav>
           <div className="nav-actions">
+            <ThemeToggle />
             {user ? (
               <>
                 <NavLink
@@ -89,7 +103,7 @@ export default function Layout() {
                         : homeFor(user.role)
                   }
                 >
-                  <span className="avatar">{user.fullName?.charAt(0)}</span>
+                  <MyAvatar user={user} />
                   <span>{user.fullName?.split(' ').slice(-2).join(' ')}</span>
                 </Link>
                 <button className="text-button" onClick={signOut}>
@@ -102,7 +116,7 @@ export default function Layout() {
                   Đăng nhập
                 </Link>
                 <Link className="btn primary small" to="/register">
-                  Tạo tài khoản ↗
+                  Tạo tài khoản
                 </Link>
               </>
             )}
@@ -114,7 +128,7 @@ export default function Layout() {
       </main>
       <footer className="site-footer">
         <div>
-          <Link to="/jobs" className="brand">
+          <Link to="/" className="brand">
             campus<span>work</span>
           </Link>
           <p>Mỗi trải nghiệm nhỏ. Một bước tiến lớn.</p>

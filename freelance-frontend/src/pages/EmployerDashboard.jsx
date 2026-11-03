@@ -1,8 +1,16 @@
-import { money, date } from '../utils/format'
+import { useMessage } from '../context/toast'
+import {
+  date,
+  jobTypeLabels,
+  payTypeLabels,
+  salaryText,
+  shiftLabels,
+} from '../utils/format'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/apiService'
 import { useAuth } from '../context/auth'
+import MapPicker from '../components/MapPicker'
 import {
   Empty,
   Feedback,
@@ -22,6 +30,18 @@ const blank = {
   workSchedule: 'Part-time',
   salary: '',
   deadline: '',
+  jobType: 'PART_TIME',
+  payType: 'HOURLY',
+  shifts: [],
+  hoursPerWeek: '',
+  noExperienceRequired: false,
+  studentFriendly: true,
+  address: '',
+  startDate: '',
+  durationMonths: '',
+  headcount: 1,
+  lat: null,
+  lng: null,
 }
 export default function EmployerDashboard() {
   const { user } = useAuth()
@@ -32,7 +52,7 @@ export default function EmployerDashboard() {
   const [edit, setEdit] = useState(null)
   const [form, setForm] = useState(blank)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [, setMessage] = useMessage()
   const [busy, setBusy] = useState(false)
   const [transition, setTransition] = useState(null)
   const load = useCallback(async () => {
@@ -53,7 +73,9 @@ export default function EmployerDashboard() {
     setEdit(job || {})
     setForm(
       job
-        ? Object.fromEntries(Object.keys(blank).map((k) => [k, job[k] ?? '']))
+        ? Object.fromEntries(
+            Object.keys(blank).map((k) => [k, job[k] ?? blank[k]]),
+          )
         : { ...blank },
     )
   }
@@ -62,7 +84,15 @@ export default function EmployerDashboard() {
     setBusy(true)
     setError('')
     try {
-      const data = { ...form, salary: Number(form.salary) }
+      const num = (v) => (v === '' || v == null ? null : Number(v))
+      const data = {
+        ...form,
+        salary: Number(form.salary),
+        hoursPerWeek: num(form.hoursPerWeek),
+        durationMonths: num(form.durationMonths),
+        headcount: num(form.headcount) || 1,
+        startDate: form.startDate || null,
+      }
       if (edit.id) await api.updateJob(edit.id, data)
       else await api.createJob(data)
       setEdit(null)
@@ -102,7 +132,7 @@ export default function EmployerDashboard() {
           + Đăng tin mới
         </button>
       </div>
-      <Feedback error={!edit ? error : ''} message={message} />
+      <Feedback error={!edit ? error : ''} />
       {loading ? (
         <Loading />
       ) : page?.content?.length ? (
@@ -119,8 +149,8 @@ export default function EmployerDashboard() {
                 <Status value={job.status} />
               </div>
               <div className="application-meta">
-                <span>{money(job.salary)}</span>
-                <span>◷ {job.workSchedule}</span>
+                <span>{salaryText(job)}</span>
+                <span>{jobTypeLabels[job.jobType] || job.workSchedule}</span>
                 <span>Hạn: {date(job.deadline)}</span>
               </div>
               <div className="card-actions">
@@ -242,7 +272,159 @@ export default function EmployerDashboard() {
                 />
               </Field>
             </div>
+            <div className="form-grid">
+              <Field id="job-type" label="Loại hình">
+                <select
+                  id="job-type"
+                  value={form.jobType}
+                  onChange={(e) =>
+                    setForm({ ...form, jobType: e.target.value })
+                  }
+                >
+                  {Object.entries(jobTypeLabels).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field id="job-paytype" label="Hình thức trả lương">
+                <select
+                  id="job-paytype"
+                  value={form.payType}
+                  onChange={(e) =>
+                    setForm({ ...form, payType: e.target.value })
+                  }
+                >
+                  {Object.entries(payTypeLabels).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      Theo {v.replace('/', '')}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <fieldset className="check-group">
+              <legend>Ca làm việc</legend>
+              {Object.entries(shiftLabels).map(([k, v]) => (
+                <label className="check-label" key={k}>
+                  <input
+                    type="checkbox"
+                    checked={form.shifts.includes(k)}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        shifts: e.target.checked
+                          ? [...form.shifts, k]
+                          : form.shifts.filter((x) => x !== k),
+                      })
+                    }
+                  />
+                  {v}
+                </label>
+              ))}
+            </fieldset>
+            <div className="form-grid">
+              <Field id="job-hours" label="Số giờ/tuần">
+                <input
+                  id="job-hours"
+                  type="number"
+                  min="1"
+                  max="80"
+                  value={form.hoursPerWeek}
+                  onChange={(e) =>
+                    setForm({ ...form, hoursPerWeek: e.target.value })
+                  }
+                />
+              </Field>
+              <Field id="job-headcount" label="Số lượng tuyển">
+                <input
+                  id="job-headcount"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={form.headcount}
+                  onChange={(e) =>
+                    setForm({ ...form, headcount: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+            <Field id="job-address" label="Địa chỉ làm việc cụ thể">
+              <input
+                id="job-address"
+                maxLength={255}
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+              />
+            </Field>
+            <div className="field">
+              <label>Vị trí trên bản đồ</label>
+              <MapPicker
+                height={260}
+                value={
+                  form.lat != null ? { lat: form.lat, lng: form.lng } : null
+                }
+                onChange={(p) =>
+                  setForm((f) => ({
+                    ...f,
+                    lat: p.lat,
+                    lng: p.lng,
+                    address: p.label || f.address || '',
+                  }))
+                }
+              />
+              <small>
+                Sinh viên sẽ thấy việc này ở mục “Gần tôi” kèm khoảng cách.
+              </small>
+            </div>
+            <div className="form-grid">
+              <Field id="job-start" label="Ngày bắt đầu">
+                <input
+                  id="job-start"
+                  type="date"
+                  min={today}
+                  value={form.startDate || ''}
+                  onChange={(e) =>
+                    setForm({ ...form, startDate: e.target.value })
+                  }
+                />
+              </Field>
+              <Field id="job-duration" label="Thời hạn (tháng)">
+                <input
+                  id="job-duration"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={form.durationMonths}
+                  onChange={(e) =>
+                    setForm({ ...form, durationMonths: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={form.noExperienceRequired}
+                onChange={(e) =>
+                  setForm({ ...form, noExperienceRequired: e.target.checked })
+                }
+              />
+              Không yêu cầu kinh nghiệm
+            </label>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={form.studentFriendly}
+                onChange={(e) =>
+                  setForm({ ...form, studentFriendly: e.target.checked })
+                }
+              />
+              Thân thiện với sinh viên (linh hoạt lịch học, hỗ trợ đào tạo)
+            </label>
             <Field id="job-schedule" label="Lịch làm việc">
+              {' '}
               <input
                 id="job-schedule"
                 required
@@ -259,7 +441,10 @@ export default function EmployerDashboard() {
                 required
                 minLength={20}
                 maxLength={5000}
-                rows={4}
+                rows={7}
+                placeholder={
+                  'Giới thiệu ngắn về công việc, sau đó liệt kê đầu việc, mỗi dòng bắt đầu bằng dấu "-":\n- Đón và phục vụ khách\n- Giữ vệ sinh khu vực làm việc'
+                }
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
@@ -270,7 +455,10 @@ export default function EmployerDashboard() {
               <textarea
                 id="job-requirements"
                 maxLength={2000}
-                rows={3}
+                rows={5}
+                placeholder={
+                  '- Sinh viên năm 1-4, đúng giờ\n- Giao tiếp tốt\n- Không cần kinh nghiệm'
+                }
                 value={form.requirements}
                 onChange={(e) =>
                   setForm({ ...form, requirements: e.target.value })
@@ -281,7 +469,10 @@ export default function EmployerDashboard() {
               <textarea
                 id="job-benefits"
                 maxLength={1000}
-                rows={3}
+                rows={5}
+                placeholder={
+                  '- Lương thỏa thuận, trả đúng hạn\n- Ăn ca miễn phí\n- Lịch làm linh hoạt theo lịch học'
+                }
                 value={form.benefits}
                 onChange={(e) => setForm({ ...form, benefits: e.target.value })}
               />
