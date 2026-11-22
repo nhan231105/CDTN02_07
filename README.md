@@ -4,21 +4,21 @@ React + Spring Boot trong repository hiện hữu. Phạm vi: đăng nhập, đ�
 
 ## 🚀 Chạy nhanh với MySQL (cho người được bàn giao project)
 
-Cách nhanh nhất: dùng sẵn file dump đầy đủ schema + dữ liệu demo, không cần tạo DB thủ công.
+Dùng schema sạch để chạy local hoặc tạo database demo riêng.
 
 **1) Cài đặt yêu cầu:** Java21, Node22/24, MySQL Server8 + MySQL Workbench đã cài và chạy.
 
 **2) Import database (1 lần):**
 - Mở MySQL Workbench → kết nối MySQL local của bạn.
-- Menu **Server → Data Import** → **Import from Self-Contained File** → chọn file `db/mysql/campuswork_full_dump.sql` → **Start Import**.
-- File tự tạo database `freelance_marketplace` kèm đủ bảng + 5 tài khoản demo + job mẫu.
+- Mở và chạy `db/mysql/schema.sql` trên MySQL local dành cho dự án. Với schema cũ, sao lưu và xem hướng dẫn migration bên dưới.
+- DB mới sẽ trống. Đăng ký tài khoản qua giao diện sau khi khởi động.
 
 **3) Trỏ backend vào MySQL của bạn** — mở PowerShell tại thư mục gốc:
 
 ```powershell
 $env:DB_URL = 'jdbc:mysql://localhost:3306/freelance_marketplace?useSSL=false&serverTimezone=UTC'
 $env:DB_USERNAME = 'root'              # đổi theo user MySQL của bạn
-$env:DB_PASSWORD = 'mat-khau-cua-ban'  # đổi theo mật khẩu MySQL của bạn
+# Set DB_PASSWORD in your shell or use the secret manager for your environment.
 .\mvnw.bat spring-boot:run "-Dspring-boot.run.profiles=mysql"
 ```
 
@@ -32,16 +32,15 @@ npm ci
 npm run dev
 ```
 
-Mở trình duyệt `http://localhost:5173`, đăng nhập bằng tài khoản demo (xem bảng bên dưới) là dùng được ngay.
+Mở trình duyệt `http://localhost:5173` và đăng ký tài khoản student hoặc employer.
 
-> Không muốn gõ `$env:...` mỗi lần chạy? Có thể sửa thẳng giá trị mặc định trong `src/main/resources/application-mysql.properties` (`${DB_URL:...}`, `${DB_USERNAME:...}`, `${DB_PASSWORD:...}`) — chỉ làm trên máy cá nhân, không commit file đã sửa chứa mật khẩu thật lên Git chung. Chi tiết đầy đủ: [MySQL Workbench Setup — mục 8](docs/MYSQL_WORKBENCH_SETUP.md).
 
 ## Yêu cầu
 
 - Java21; Node `^20.19.0 || >=22.12.0` theo Vite, khuyến nghị Node22/24.
 - Windows PowerShell; Maven wrapper có sẵn, lần đầu cần mạng để tải Maven/dependencies.
 - Python3 để chạy REST smoke; Microsoft Edge cho Playwright trên máy Windows này.
-- Không cần MySQL/Docker để demo. Mặc định `dev-h2`, dữ liệu in-memory mất sau restart và được seed lại.
+- MySQL 8 dùng cho ứng dụng. Test Maven dùng H2 cô lập.
 
 ## Chạy local
 
@@ -51,13 +50,13 @@ Terminal1 ở root:
 .\mvnw.bat spring-boot:run
 ```
 
-Backend: `http://localhost:8082/api`; health: `http://localhost:8082/api/auth/health`. Profile dev seed24 tin,5 account, hồ sơ/CV và các trạng thái mẫu. Không dùng account/secret dev ngoài local.
+Backend chạy profile mặc định `mysql` tại `http://localhost:8082/api`. Endpoint kiểm tra là `/api/auth/health`.
 
 Để chạy demo và kiểm thử tích hợp bằng artifact ổn định, build xong rồi khởi động JAR:
 
 ```powershell
 .\mvnw.bat package
-java -jar target/freelance-marketplace-1.0.0.jar --spring.profiles.active=dev-h2
+java -jar target/freelance-marketplace-1.0.0.jar --spring.profiles.active=mysql
 ```
 
 JAR đã đóng gói tách phiên chạy khỏi thư mục class đang biên dịch. Khi dùng `spring-boot:run`, dừng phiên đó trước khi chạy một build khác cùng repository; Maven có thể thay class trong `target/classes` khi ứng dụng đang tải chúng.
@@ -74,15 +73,8 @@ Frontend: `http://127.0.0.1:5173`. Client gọi `/api` qua Vite proxy8082; tri�
 
 ## Tài khoản demo — chỉ dev
 
-Tất cả dùng mật khẩu `DemoPass123!`:
+Tạo dữ liệu demo bằng tài khoản tự đăng ký hoặc bật demo initializer trên DB local riêng. Cấu hình mật khẩu demo trong môi trường chạy local.
 
-| Vai trò | Email |
-|---|---|
-| Student A | `student.a@demo.local` |
-| Student B | `student.b@demo.local` |
-| Employer A | `employer.a@demo.local` |
-| Employer B | `employer.b@demo.local` |
-| Admin | `admin@demo.local` |
 
 Có thể đăng ký tài khoản student/employer mới để thử luồng độc lập. Không cho tự đăng ký ADMIN. Đăng ký thành công chuyển login; JWT một giờ, logout xóa phiên client, token sai/hết hạn yêu cầu login lại.
 
@@ -100,9 +92,8 @@ npm run format:check
 npm run test:e2e
 ```
 
-API smoke và E2E cần backend/frontend đang chạy, tạo dữ liệu QA riêng trong H2. Evidence API được ghi ở `docs/evidence/api-smoke.json`, không lưu token. Lệnh E2E dùng Edge đã cài; nếu máy khác chưa có Edge, cài browser Playwright tương ứng và cấu hình channel theo môi trường.
+API smoke và E2E cũ dùng dữ liệu demo fixture. Chỉ chạy chúng trên bản thử nghiệm riêng sau khi cấu hình fixture tương ứng, bao gồm `APP_DEMO_PASSWORD` trong terminal chạy test.
 
-Kết quả thực chạy và giới hạn nằm trong [TEST_REPORT](docs/TEST_REPORT.md). Không suy ra PASS từ việc test mới được viết hoặc từ baseline “No tests to run”.
 
 ## Luồng demo
 
@@ -116,9 +107,22 @@ Chỉ owner và employer của đơn được tải CV. Thay CV hiện tại kh�
 
 ## Cấu hình và tài liệu
 
-- `dev-h2`: mặc định, JPA create-drop chỉ dev; H2 console tắt. File riêng tại `UPLOAD_DIRECTORY` (mặc định thư mục `uploads/`, Git ignore), không public hóa thư mục này.
+- `mysql` là profile mặc định. File dùng `UPLOAD_DIRECTORY`, mặc định là `uploads/`. H2 được cấu hình cho kiểm thử.
 - `mysql`: schema validate, credentials qua `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`; `JWT_SECRET` tối thiểu32byte. Không tự chuyển sang MySQL.
 - `.env.example` là mẫu tham khảo; Spring đọc biến môi trường, không tự nạp file `.env`. Xem hướng dẫn Workbench để đặt biến trong PowerShell.
+- Khi dùng Docker Compose local, cấu hình `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` và `JWT_SECRET` trong môi trường hoặc file `.env` riêng. Khi chạy trực tiếp ngoài profile `render` mà bỏ trống `JWT_SECRET`, backend sinh khóa tạm và phiên đăng nhập sẽ hết hiệu lực sau khi khởi động lại.
 - [API Contract](docs/API_CONTRACT.md), [ERD](docs/ERD.md), [truy vết7UC](docs/REQUIREMENTS_TRACEABILITY.md), [quyết định/sửa lỗi](docs/DECISIONS_AND_FIXES.md).
 - [Nguồn bảo toàn](docs/reference/INDEX.md), [cần xác nhận](docs/REVIEW_REQUIRED.md), [báo cáo triển khai](docs/IMPLEMENTATION_REPORT.md), [kế hoạch commit](docs/COMMIT_PLAN.md).
-- [MySQL Workbench](docs/MYSQL_WORKBENCH_SETUP.md): chỉ thực hiện sau nghiệm thu H2; SQL đã chuẩn bị nhưng chưa đồng nghĩa kiểm thử MySQL thành công.
+- [MySQL Workbench](docs/MYSQL_WORKBENCH_SETUP.md) có ghi chép cấu hình local. Dùng phần Deploy bên dưới cho Render.
+
+## Deploy demo công khai trên Render
+
+1. Tạo database MySQL 8 dành riêng cho demo và nạp [schema.sql](db/mysql/schema.sql). Schema mới đã có các cột Exam Mode. Với bản sao DB cũ, kiểm tra schema và chạy [migration 06](db/mysql/migration_06_exam_mode.sql) nếu thiếu cột. Sao lưu trước khi cập nhật DB đã có dữ liệu. Hibernate kiểm tra schema khi khởi động và ứng dụng không tự chạy migration. Nếu nhà cung cấp cấp sẵn tên database, chọn database đó và điều chỉnh các câu lệnh `CREATE DATABASE`, `USE` và `SHOW TABLES FROM` trong bản SQL dùng để import.
+2. Tạo **Web Service**, chọn **Docker**, dùng root repo và `./Dockerfile`. Để trống Docker Command. Đặt Health Check Path là `/api/auth/health`. Spring đọc `PORT` do Render cấp. Giữ `/api` làm context path.
+3. Đặt `SPRING_PROFILES_ACTIVE=mysql,render`, `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ORIGINS` và `UPLOAD_DIRECTORY` trong Render Dashboard. Dùng JDBC URL với TLS theo nhà cung cấp MySQL. JWT cần khóa ngẫu nhiên riêng, tối thiểu 32 byte. Profile `render` bắt buộc cấu hình khóa và vô hiệu hóa demo initializer.
+4. Gắn persistent disk vào Web Service tại `/var/data`, đặt `UPLOAD_DIRECTORY=/var/data/uploads`. Nếu chuyển dữ liệu có upload, sao chép các tệp tương ứng với metadata `stored_files` vào disk trước khi mở quyền truy cập. Thử tải lại một tệp sau một lần redeploy.
+5. Tạo **Static Site**, Root Directory `freelance-frontend`, Build Command `npm ci --include=dev && npm run build`, Publish Directory `dist`. Đặt `NODE_VERSION` là bản Node 24 đã kiểm thử. Đặt `VITE_API_BASE_URL` bằng URL HTTPS công khai của backend kèm `/api`, bỏ dấu `/` cuối. Thêm Rewrite từ `/*` tới `/index.html`.
+6. Đặt `CORS_ORIGINS` thành origin HTTPS chính xác của Static Site, bỏ path và dấu `/` cuối. Kiểm tra health, refresh route con, đăng ký, đăng nhập, quyền Admin và upload/download trước khi mở demo.
+7. Kết nối hai service với repo GitHub của nhóm và chọn nhánh `main`. Bật Auto-Deploy **On Commit** hoặc **After CI Checks Pass** nếu repo phát CI checks. Trước khi công khai GitHub, kiểm tra cả file đã track và lịch sử Git. Giữ `.env`, dump dữ liệu, file upload và tài liệu có dữ liệu cá nhân ở ngoài repo công khai. Git ignore chỉ áp dụng với file chưa được track.
+
+Demo công khai nên dùng tài khoản và dữ liệu tổng hợp. Để kiểm tra dashboard Admin, người quản trị có quyền DB cần cấp vai trò cho một tài khoản chuyên dùng đã xác minh qua quy trình nội bộ, rồi đăng nhập lại. API đăng ký không cấp quyền ADMIN. Khi chạy local, có thể bật demo initializer có chủ đích bằng `APP_DEMO_SEED` và cấu hình `APP_DEMO_PASSWORD` riêng cho DB dùng thử.

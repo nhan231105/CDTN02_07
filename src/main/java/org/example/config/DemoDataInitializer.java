@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 
-@Component @Profile({"dev-h2","h2","mysql"}) @RequiredArgsConstructor
+@Component @Profile("(dev-h2 | h2 | mysql) & !render") @RequiredArgsConstructor
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.demo.seed",havingValue="true",matchIfMissing=true)
 public class DemoDataInitializer implements CommandLineRunner {
     private final UserRepository users;private final StudentProfileRepository students;private final EmployerProfileRepository employers;
@@ -25,11 +25,15 @@ public class DemoDataInitializer implements CommandLineRunner {
     @Override @Transactional public void run(String... args)throws Exception{
         if(env.acceptsProfiles(org.springframework.core.env.Profiles.of("mysql"))&&!env.getProperty("app.demo.seed","false").equals("true"))return;
         if(users.count()>0)return;
-        User studentA=user("Minh Anh Nguyễn","student.a@demo.local","0900000001",UserRole.STUDENT);
-        User studentB=user("Hoàng Bảo Trần","student.b@demo.local","0900000002",UserRole.STUDENT);
-        User employerA=user("Lotus Creative Studio","employer.a@demo.local","0900000003",UserRole.EMPLOYER);
-        User employerB=user("Bright Future Vietnam","employer.b@demo.local","0900000004",UserRole.EMPLOYER);
-        user("Quản trị viên Demo","admin@demo.local","0900000005",UserRole.ADMIN);
+        String demoPassword = env.getProperty("app.demo.password");
+        if (demoPassword == null || demoPassword.isBlank()) {
+            throw new IllegalStateException("Set APP_DEMO_PASSWORD before enabling local demo data");
+        }
+        User studentA=user("Minh Anh Nguyễn","student.a@demo.local","0900000001",UserRole.STUDENT,demoPassword);
+        User studentB=user("Hoàng Bảo Trần","student.b@demo.local","0900000002",UserRole.STUDENT,demoPassword);
+        User employerA=user("Lotus Creative Studio","employer.a@demo.local","0900000003",UserRole.EMPLOYER,demoPassword);
+        User employerB=user("Bright Future Vietnam","employer.b@demo.local","0900000004",UserRole.EMPLOYER,demoPassword);
+        user("Quản trị viên Demo","admin@demo.local","0900000005",UserRole.ADMIN,demoPassword);
         try(var pdf=new PDDocument();var output=new ByteArrayOutputStream()){
             pdf.addPage(new PDPage());pdf.save(output);byte[] bytes=output.toByteArray();
             files.upload(studentA.getId(),new DemoFile(bytes),false);files.upload(studentB.getId(),new DemoFile(bytes),false);
@@ -74,8 +78,8 @@ public class DemoDataInitializer implements CommandLineRunner {
         Notification company=new Notification();company.setUser(employerA);company.setMessage("Bạn có hồ sơ ứng tuyển mới cần xem xét.");company.setRelatedType("APPLICATION");company.setRelatedId(pending.getId());notifications.save(company);
         Review review=new Review();review.setJob(approved.getJob());review.setReviewer(studentA);review.setReviewee(approved.getJob().getEmployer());review.setRating(5);review.setContent("Môi trường chuyên nghiệp, hướng dẫn tận tình và lịch làm phù hợp sinh viên.");reviews.save(review);
     }
-    private User user(String name,String email,String phone,UserRole role){
-        User u=new User();u.setFullName(name);u.setEmail(email);u.setPhone(phone);u.setPasswordHash(passwords.encode("DemoPass123!"));u.setRole(role);u=users.saveAndFlush(u);
+    private User user(String name,String email,String phone,UserRole role,String demoPassword){
+        User u=new User();u.setFullName(name);u.setEmail(email);u.setPhone(phone);u.setPasswordHash(passwords.encode(demoPassword));u.setRole(role);u=users.saveAndFlush(u);
         if(role==UserRole.STUDENT){StudentProfile p=new StudentProfile();p.setUser(u);p.setBio("Sinh viên yêu thích học hỏi, sáng tạo và các dự án có giá trị thực tế.");students.saveAndFlush(p);}
         if(role==UserRole.EMPLOYER){EmployerProfile p=new EmployerProfile();p.setUser(u);p.setOrgName(name);p.setAddress("TP. Hồ Chí Minh");p.setDescription("Đội ngũ sáng tạo kết nối sinh viên với những cơ hội phát triển thực tế.");employers.saveAndFlush(p);}return u;
     }

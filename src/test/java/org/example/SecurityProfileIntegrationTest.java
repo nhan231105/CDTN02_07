@@ -20,10 +20,57 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
+@SpringBootTest(properties = "app.cors.origins=https://preview.example, https://campuswork-ui.example")
+@AutoConfigureMockMvc @ActiveProfiles("test")
 class SecurityProfileIntegrationTest {
     @Autowired MockMvc mvc;@Autowired ObjectMapper json;@Autowired UserRepository users;@Autowired StudentProfileRepository students;
     @Autowired EmployerProfileRepository employers;@Autowired BCryptPasswordEncoder passwords;@Autowired JwtService jwt;
+    @Test
+    void productionCorsAcceptsConfiguredOriginsAndRejectsOthers() throws Exception {
+        mvc.perform(options("/me/profile")
+                .header("Origin", "https://campuswork-ui.example")
+                .header("Access-Control-Request-Method", "PATCH")
+                .header("Access-Control-Request-Headers", "Authorization, Content-Type"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Access-Control-Allow-Origin", "https://campuswork-ui.example"));
+
+        mvc.perform(options("/me/profile")
+                .header("Origin", "https://other.example")
+                .header("Access-Control-Request-Method", "PATCH"))
+            .andExpect(status().isForbidden())
+            .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+    }
+
+    @Test
+    void adminEndpointsRequireAdminRole() throws Exception {
+        mvc.perform(get("/auth/admin/stats")).andExpect(status().isUnauthorized());
+        String studentToken = student();
+        mvc.perform(get("/admin/jobs").header("Authorization", "Bearer " + studentToken))
+            .andExpect(status().isForbidden());
+
+        var admin = new User();
+        var fixture = data("ADMIN");
+        admin.setFullName(fixture.get("fullName"));
+        admin.setEmail(fixture.get("email"));
+        admin.setPhone(fixture.get("phone"));
+        admin.setPasswordHash(passwords.encode(fixture.get("password")));
+        admin.setRole(UserRole.ADMIN);
+        admin.setStatus(UserStatus.ACTIVE);
+        String adminToken = jwt.issue(users.saveAndFlush(admin), jwt.expiresAt());
+
+        mvc.perform(get("/auth/admin/stats").header("Authorization", "Bearer " + adminToken))
+            .andExpect(status().isOk());
+        mvc.perform(get("/admin/jobs").header("Authorization", "Bearer " + adminToken))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void renderRequiresAnExplicitJwtSecret() {
+        assertThrows(IllegalStateException.class, () -> new JwtService("", 60_000, true));
+        assertThrows(IllegalStateException.class, () -> new JwtService("short", 60_000, true));
+        assertDoesNotThrow(() -> new JwtService("", 60_000, false));
+    }
+
     private String body(Object value)throws Exception{return json.writeValueAsString(value);}
     private Map<String,String> data(String role){String key=UUID.randomUUID().toString().substring(0,8);return Map.of("fullName","Test User "+key,"email",key+"@test.local","phone","09"+String.format("%08d",Math.floorMod(UUID.randomUUID().hashCode(),100000000)),"password","GoodPass123!","role",role);}
     private JsonNode register(Map<String,String> data)throws Exception{return json.readTree(mvc.perform(post("/auth/register").contentType("application/json").content(body(data))).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("data");}

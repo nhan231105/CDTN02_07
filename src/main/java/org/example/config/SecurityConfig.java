@@ -16,7 +16,7 @@ import java.util.*;
 public class SecurityConfig {
  @Bean public BCryptPasswordEncoder passwordEncoder(){return new BCryptPasswordEncoder();}
  @Bean public CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.origins:http://localhost:5173,http://127.0.0.1:5173}")String origins){
-  var c=new CorsConfiguration();c.setAllowedOrigins(Arrays.asList(origins.split(",")));c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));c.setAllowedHeaders(List.of("Authorization","Content-Type"));c.setExposedHeaders(List.of("Content-Disposition"));
+  var c=new CorsConfiguration();c.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(origin -> !origin.isEmpty()).toList());c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));c.setAllowedHeaders(List.of("Authorization","Content-Type"));c.setExposedHeaders(List.of("Content-Disposition"));
   var source=new UrlBasedCorsConfigurationSource();source.registerCorsConfiguration("/**",c);return source;
  }
  @Bean public SecurityFilterChain filterChain(HttpSecurity http,JwtAuthenticationFilter jwt,ObjectMapper mapper,@org.springframework.beans.factory.annotation.Qualifier("corsConfigurationSource") CorsConfigurationSource cors)throws Exception{

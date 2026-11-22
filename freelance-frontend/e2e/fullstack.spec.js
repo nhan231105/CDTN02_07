@@ -42,7 +42,7 @@ async function login(page, email, expected) {
     })
   await page
     .getByLabel('Mật khẩu', { exact: true })
-    .fill(email.endsWith('@demo.local') ? 'DemoPass123!' : password)
+    .fill(email.endsWith('@demo.local') ? process.env.APP_DEMO_PASSWORD : password)
   await page.getByRole('button', { name: 'Đăng nhập →', exact: true }).click()
   await expect(page).toHaveURL(new RegExp(expected))
 }

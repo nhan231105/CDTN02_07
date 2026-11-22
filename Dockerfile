@@ -9,10 +9,10 @@ COPY pom.xml .
 RUN mvn dependency:resolve
 
 # Copy source code
-COPY src ./src
+COPY src/main ./src/main
 
 # Build application
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
 
 # Runtime stage
 FROM eclipse-temurin:21-jre
@@ -26,8 +26,8 @@ COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8082
 
 # Environment variables
-ENV SPRING_PROFILES_ACTIVE=dev-h2
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+ENV SPRING_PROFILES_ACTIVE=mysql
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=60.0"
 
 # Run application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

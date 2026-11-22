@@ -75,3 +75,8 @@ dist/
 /config/application-mysql.properties
 
 tmp-*
+
+# Private database exports and environment files
+.env.*
+!.env.example
+/db/mysql/campuswork_full_dump.sql

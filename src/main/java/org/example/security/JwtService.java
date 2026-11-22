@@ -5,13 +5,19 @@ import org.example.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
+import java.util.Base64;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 @Service
 public class JwtService {
     private final SecretKey key; private final long expiration;
-    public JwtService(@Value("${jwt.secret}")String secret,@Value("${jwt.expiration:3600000}")long expiration){
+    public JwtService(@Value("${jwt.secret}")String secret,@Value("${jwt.expiration:3600000}")long expiration,
+                      @Value("${app.jwt.require-configured-secret:false}") boolean requireConfiguredSecret){
+        if (secret.isBlank() && !requireConfiguredSecret) {
+            // Local sessions use a fresh signing key unless one is configured.
+            secret = Base64.getEncoder().encodeToString(Jwts.SIG.HS256.key().build().getEncoded());
+        }
         if(secret.getBytes(StandardCharsets.UTF_8).length<32)throw new IllegalStateException("JWT_SECRET must contain at least 32 bytes");
         key=Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));this.expiration=expiration;
     }

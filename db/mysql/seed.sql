@@ -1,8 +1,8 @@
 -- Dữ liệu mẫu cho CampusWork (việc làm part-time sinh viên).
--- Chạy MỘT LẦN sau schema.sql trên database còn trống. Mật khẩu mọi tài khoản mẫu: DemoPass123!
+-- Run once on an empty local schema. Set @campuswork_demo_password_hash to a BCrypt hash in this SQL session.
 USE freelance_marketplace;
 
-SET @pw = '$2a$10$6kzedD8114slbL9yb0coRuaSoaRsKAH8Kp8IqQ9.ZOytMBFXPmrRG';
+SET @pw = @campuswork_demo_password_hash;
 SET @now = CURRENT_TIMESTAMP(6);
 
 INSERT INTO users (full_name,email,phone,password_hash,role,status,token_version,created_at,updated_at) VALUES

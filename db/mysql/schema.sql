@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS student_profiles (
   available_shifts VARCHAR(100),
   preferred_area VARCHAR(100),
   open_to_work BOOLEAN NOT NULL DEFAULT FALSE,
+  exam_mode BOOLEAN NOT NULL DEFAULT FALSE,
+  exam_start_date DATE,
+  exam_end_date DATE,
   lat DOUBLE,
   lng DOUBLE,
   CONSTRAINT fk_student_user FOREIGN KEY (user_id) REFERENCES users(id)

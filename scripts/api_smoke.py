@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 import json
 import math
+import os
 from pathlib import Path
 import secrets
 import statistics
@@ -105,7 +106,7 @@ class Smoke:
         return user
 
     def run(self, samples: int):
-        password = "DemoPass123!"
+        password = os.environ["APP_DEMO_PASSWORD"]
         suffix = secrets.token_hex(5)
         phone = lambda: "0" + str(secrets.randbelow(900000000) + 100000000)
         student_data = {"fullName": "QA Student " + suffix, "email": f"qa.student.{suffix}@example.test",
@@ -276,6 +277,8 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.benchmark_samples <= 1000:
         parser.error("--benchmark-samples must be between 1 and 1000")
+    if not os.environ.get("APP_DEMO_PASSWORD"):
+        parser.error("Set APP_DEMO_PASSWORD for the isolated demo fixtures")
     smoke = Smoke(args.base_url)
     try:
         smoke.run(args.benchmark_samples)
