@@ -26,6 +26,10 @@ Backend giữ các trạng thái `PENDING`, `APPROVED`, `REJECTED` và `WITHDRAW
 
 Nộp đơn tạo thông báo cho cả hai bên. Nhà tuyển dụng mở trang ứng viên của công việc từ thông báo. Sinh viên nhận xác nhận hoặc kết quả xét duyệt và có thể mở hội thoại từ thông báo được nhận. Thông báo giữ thời gian và trạng thái đã đọc trong bảng hiện có.
 
+Sau khi giao dịch ứng tuyển hoặc xét duyệt commit, backend gửi email qua Brevo tới địa chỉ tài khoản. Mỗi email có khóa idempotency riêng theo sự kiện và người nhận. Nếu gửi thất bại, backend ghi log sự kiện và giữ kết quả nghiệp vụ cùng thông báo nội bộ. Email ứng tuyển hiện không có hàng đợi hoặc retry tự động.
+
+Nếu Brevo từ chối yêu cầu OTP hoặc không xác nhận tiếp nhận, API trả `503 EMAIL_UNAVAILABLE`. Mã đó không dùng được và giới hạn gửi lại vẫn áp dụng. Brevo tiếp nhận email không đồng nghĩa thư đã tới hộp thư.
+
 Mỗi đơn được duyệt có một hội thoại xác định bằng ID đơn. Tin nhắn lưu trong `application_messages`, có người gửi, người nhận, thời điểm gửi và thời điểm đọc. Frontend cập nhật khi mở trang, khi tab trở lại và mỗi 10 giây khi đang xem. API kiểm tra vai trò và quyền sở hữu đơn trong mọi thao tác.
 
 Xem [hợp đồng API](API_CONTRACT.md) để biết payload và mã trạng thái.
@@ -34,7 +38,7 @@ Xem [hợp đồng API](API_CONTRACT.md) để biết payload và mã trạng th
 
 1. Sao lưu Railway MySQL. Trên bản sao kiểm thử, chạy các migration còn thiếu theo thứ tự, sau đó chạy [07](../db/mysql/migration_07_email_challenges.sql) và [08](../db/mysql/migration_08_application_messages.sql). Hai migration thêm hai bảng và không sửa bảng cũ. Với DB mới, dùng [schema.sql](../db/mysql/schema.sql) và điều chỉnh tên database trong câu lệnh nếu Railway cấp tên khác. Backend dùng Hibernate `validate` nên cần migration trước khi deploy.
 2. Trong Render Web Service của backend, giữ Docker build ở root repo và health check `/api/auth/health`. Đặt `SPRING_PROFILES_ACTIVE=mysql,render`, `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ORIGINS=https://campuswork-vlu.onrender.com` và `UPLOAD_DIRECTORY` theo cấu hình lưu trữ hiện có.
-3. Cấu hình `RESEND_API_KEY` và `CAMPUSWORK_EMAIL_FROM` bằng địa chỉ gửi thuộc domain đã xác minh, ví dụ `CampusWork <no-reply@ten-mien-cua-nhom.vn>`. Dịch vụ gửi qua HTTPS. [Tài liệu Resend](https://resend.com/features/email-api).
+3. Cấu hình `BREVO_API_KEY` và `CAMPUSWORK_EMAIL_FROM` bằng sender đã xác minh trong Brevo, ví dụ `CampusWork <campuswork.system@gmail.com>`. Dịch vụ gửi qua HTTPS. [Tài liệu Brevo](https://developers.brevo.com/docs/send-a-transactional-email).
 4. Trong Render Static Site, đặt root `freelance-frontend`, build `npm ci --include=dev && npm run build`, publish `dist`, Node 24 và `VITE_API_BASE_URL=https://campuswork-platform.onrender.com/api`. Giữ rewrite `/*` tới `/index.html` để refresh URL con. Deploy lại frontend sau khi đổi biến Vite.
 5. Xác nhận health và CORS trước khi chạy các luồng bên dưới trên môi trường staging. Dùng email thử do nhóm kiểm soát.
 
@@ -52,7 +56,7 @@ Xem [hợp đồng API](API_CONTRACT.md) để biết payload và mã trạng th
 
 `mvn verify` đã qua 43 bài kiểm thử, Vitest qua 31 và REST smoke qua 104 kiểm tra. Playwright qua 7 bài trên Edge và 4 bài chạy trên Chrome. Backend đã khởi động và trả health 200 với các migration trên MySQL 8.0.46 cục bộ, profile `mysql,render`. Build frontend đã kiểm tra với URL production. Lint có một cảnh báo trong `MyAvatar.jsx` và Vite báo bundle chính lớn hơn 500 kB.
 
-Email được kiểm thử qua hộp thư thử nghiệm. Nhóm cần xác nhận gửi và nhận bằng Resend thật, áp dụng migration trên bản sao Railway và chạy smoke sau deploy trước khi đưa bản này vào production.
+Email được kiểm thử qua hộp thư thử nghiệm. Nhóm cần xác nhận gửi và nhận bằng Brevo thật, áp dụng migration trên bản sao Railway và chạy smoke sau deploy trước khi đưa bản này vào production.
 
 `mvn verify` chạy backend với H2. Trong `freelance-frontend`, chạy `npm ci`, `npm run lint`, `npm test` và `npm run build`.
 

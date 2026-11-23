@@ -133,6 +133,21 @@ class SecurityProfileIntegrationTest {
         assertFalse(users.existsByEmail(email));
     }
 
+    @Test void providerFailureReturns503AndPreventsImmediateOtpRetry() throws Exception {
+        var d = data("STUDENT");
+        register(d);
+        var email = d.get("email");
+        org.mockito.Mockito.doThrow(new org.example.service.CampusEmail.DeliveryException()).when(mail)
+                .send(org.mockito.ArgumentMatchers.eq(email), org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString());
+        var request = post("/auth/password/forgot").contentType("application/json")
+                .content(body(Map.of("email", email)));
+        mvc.perform(request).andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("EMAIL_UNAVAILABLE"));
+        assertNull(challenges.findById("reset:" + email).orElseThrow().getCodeHash());
+        mvc.perform(request).andExpect(status().isTooManyRequests());
+    }
+
     @Test void passwordResetConsumesCodeAndRevokesTheOldToken() throws Exception {
         var d = data("STUDENT");
         register(d);

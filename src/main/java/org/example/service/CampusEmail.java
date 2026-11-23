@@ -12,36 +12,57 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class CampusEmail {
     private final RestClient client;
     private final String key;
-    private final String from;
+    private final Map<String, String> sender;
 
-    public CampusEmail(@Value("${RESEND_API_KEY:}") String key,
+    @org.springframework.beans.factory.annotation.Autowired
+    public CampusEmail(@Value("${BREVO_API_KEY:}") String key,
                        @Value("${CAMPUSWORK_EMAIL_FROM:}") String from) {
-        this.key = key;
-        this.from = from;
+        this(key, from, clientBuilder());
+    }
+
+    CampusEmail(String key, String from, RestClient.Builder builder) {
+        this.key = key.strip();
+        sender = parseSender(from);
+        client = builder.baseUrl("https://api.brevo.com").build();
+    }
+
+    private static RestClient.Builder clientBuilder() {
         var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5)).build());
         factory.setReadTimeout(Duration.ofSeconds(8));
-        client = RestClient.builder().requestFactory(factory)
-                .baseUrl("https://api.resend.com").build();
+        return RestClient.builder().requestFactory(factory);
     }
 
     public void ensureConfigured() {
-        if (key.isBlank() || from.isBlank()) throw unavailable();
+        if (key.isBlank() || sender.isEmpty()) throw new DeliveryException();
     }
 
     public void send(String email, String subject, String code) {
+        sendMessage(email, subject, "Mã CampusWork của bạn là " + code + ". Mã hết hạn sau 5 phút.",
+                UUID.randomUUID());
+    }
+
+    public void sendMessage(String email, String subject, String body, UUID idempotencyKey) {
         ensureConfigured();
         try {
-            client.post().uri("/emails").headers(headers -> headers.setBearerAuth(key))
+            var response = client.post().uri("/v3/smtp/email").header("api-key", key)
+                    .accept(MediaType.APPLICATION_JSON)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(Map.of("from", from, "to", List.of(email), "subject", subject,
-                            "text", "Mã CampusWork của bạn là " + code + ". Mã hết hạn sau 5 phút."))
-                    .retrieve().toBodilessEntity();
+                    .body(Map.of("sender", sender, "to", List.of(Map.of("email", email)),
+                            "subject", subject, "textContent", body,
+                            "headers", Map.of("IdempotencyKey", idempotencyKey.toString())))
+                    .retrieve().toEntity(AcceptedEmail.class);
+            var accepted = response.getBody();
+            if (response.getStatusCode().value() != 201 || accepted == null
+                    || accepted.messageId() == null || accepted.messageId().isBlank()) {
+                throw new DeliveryException();
+            }
         } catch (RestClientException ex) {
             var log = org.slf4j.LoggerFactory.getLogger(CampusEmail.class);
             if (ex instanceof RestClientResponseException response) {
@@ -49,11 +70,25 @@ public class CampusEmail {
             } else {
                 log.warn("CampusWork email provider request failed");
             }
-            throw unavailable();
+            throw new DeliveryException();
         }
     }
 
-    private DomainException unavailable() {
-        return new DomainException(503, "EMAIL_UNAVAILABLE", "Chưa thể gửi email. Vui lòng thử lại sau.");
+    private static Map<String, String> parseSender(String from) {
+        var match = java.util.regex.Pattern.compile("^(?:([^<>]+)\\s*<([^<>]+)>|([^<>]+))$")
+                .matcher(from.strip());
+        if (!match.matches()) return Map.of();
+        String email = (match.group(2) == null ? match.group(3) : match.group(2)).strip();
+        if (!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) return Map.of();
+        String name = match.group(1) == null ? "CampusWork" : match.group(1).strip();
+        return Map.of("name", name, "email", email);
+    }
+
+    private record AcceptedEmail(String messageId) {}
+
+    public static final class DeliveryException extends DomainException {
+        public DeliveryException() {
+            super(503, "EMAIL_UNAVAILABLE", "Chưa thể gửi email. Vui lòng thử lại sau.");
+        }
     }
 }

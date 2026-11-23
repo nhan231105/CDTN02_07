@@ -42,6 +42,9 @@ public final class E2eApplication {
                 public void ensureConfigured() {}
 
                 @Override
+                public void sendMessage(String email, String subject, String body, java.util.UUID key) {}
+
+                @Override
                 public void send(String email, String subject, String code) {
                     if (!email.matches("[a-z0-9.]+@test\\.local")) {
                         throw new IllegalArgumentException("Expected a synthetic test address");

@@ -28,7 +28,7 @@ public class AccountEmailService {
     private final BCryptPasswordEncoder passwords;
     private final CampusEmail mail;
 
-    @Transactional
+    @Transactional(noRollbackFor = CampusEmail.DeliveryException.class)
     public void requestRegistration(RegisterRequest request) {
         validateRegistration(request);
         mail.ensureConfigured();
@@ -44,7 +44,7 @@ public class AccountEmailService {
         return userService.register(request);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CampusEmail.DeliveryException.class)
     public void requestReset(String address) {
         mail.ensureConfigured();
         String email = normalize(address);
@@ -98,9 +98,9 @@ public class AccountEmailService {
             boolean registration = purpose.equals("register");
             try {
                 mail.send(email, registration ? "Xác minh email CampusWork" : "Đặt lại mật khẩu CampusWork", code);
-            } catch (DomainException failure) {
-                if (registration || !"EMAIL_UNAVAILABLE".equals(failure.getCode())) throw failure;
+            } catch (CampusEmail.DeliveryException failure) {
                 challenge.setCodeHash(null);
+                throw failure;
             }
         }
     }

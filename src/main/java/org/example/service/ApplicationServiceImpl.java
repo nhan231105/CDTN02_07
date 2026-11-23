@@ -6,6 +6,7 @@ import org.example.dto.*;
 import org.example.entity.*;
 import org.example.repository.*;
 import org.example.security.CurrentUser;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final FileStorageService fileStorageService;
     private final StudentProfileRepository studentProfiles;
     private final EmployerProfileRepository employerProfiles;
+    private final ApplicationEventPublisher events;
     @Override @Transactional
     public Application createApplication(Long jobId,Long studentId,CreateApplicationRequest request) {
         CurrentUser.requireRole(UserRole.STUDENT); CurrentUser.requireId(studentId);
@@ -44,10 +46,12 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setPhone(value(request.getPhone(),student.getPhone()));
         application.setCoverLetter(request.getCoverLetter()); application.setConsentDataUsage(true); application.setStatus(ApplicationStatus.PENDING);
         Application saved=applicationRepository.saveAndFlush(application);
-        notificationService.createNotification(job.getEmployer().getId(),
-                "Có ứng tuyển mới cho công việc: " + job.getTitle(), "JOB_APPLICATIONS", job.getId());
-        notificationService.createNotification(student.getId(),"Bạn đã ứng tuyển vào vị trí " + job.getTitle()
-                + " tại " + employerName(job), "APPLICATION", saved.getId());
+        String employerMessage = "Có ứng tuyển mới cho công việc: " + job.getTitle();
+        String studentMessage = "Bạn đã ứng tuyển vào vị trí " + job.getTitle() + " tại " + employerName(job);
+        notificationService.createNotification(job.getEmployer().getId(), employerMessage, "JOB_APPLICATIONS", job.getId());
+        notificationService.createNotification(student.getId(), studentMessage, "APPLICATION", saved.getId());
+        emailNotice(saved, "submitted-employer", job.getEmployer(), "CampusWork: Có ứng tuyển mới", employerMessage);
+        emailNotice(saved, "submitted-student", student, "CampusWork: Xác nhận ứng tuyển", studentMessage);
         return saved;
     }
     private static String value(String candidate,String fallback) { return candidate==null || candidate.isBlank()? fallback:candidate.trim(); }
@@ -106,10 +110,19 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application saved=applicationRepository.saveAndFlush(application);
         String position = job.getTitle() + " tại " + employerName(job);
         boolean accepted = decision == ApplicationStatus.APPROVED;
-        notificationService.createNotification(application.getStudent().getId(), accepted
+        String message = accepted
                 ? "Chúc mừng! Bạn đã được nhận vào vị trí " + position
-                : "Đơn ứng tuyển vị trí " + position + " đã bị từ chối", accepted ? "MESSAGE" : "APPLICATION", id);
+                : "Đơn ứng tuyển vị trí " + position + " đã bị từ chối";
+        notificationService.createNotification(application.getStudent().getId(), message,
+                accepted ? "MESSAGE" : "APPLICATION", id);
+        emailNotice(saved, decision.name(), application.getStudent(), "CampusWork: Kết quả ứng tuyển", message);
         return saved;
+    }
+
+    private void emailNotice(Application application, String event, User recipient, String subject, String message) {
+        String eventKey = application.getId() + ":" + application.getCreatedAt() + ":" + event;
+        events.publishEvent(new ApplicationEmailDelivery.Notice(eventKey, recipient.getEmail(),
+                subject, message + "\n\nĐăng nhập CampusWork để xem chi tiết."));
     }
     private String employerName(Job job) {
         return employerProfiles.findById(job.getEmployer().getId())

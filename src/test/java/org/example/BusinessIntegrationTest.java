@@ -6,6 +6,8 @@ import org.example.entity.*;
 import org.example.repository.*;
 import org.example.security.JwtService;
 import org.example.service.NotificationService;
+import org.example.service.CampusEmail;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -50,6 +52,7 @@ class BusinessIntegrationTest {
     @Autowired JwtService jwt;
     @Autowired org.springframework.transaction.PlatformTransactionManager transactions;
     @SpyBean NotificationService notificationService;
+    @MockBean CampusEmail email;
     static final AtomicInteger sequence=new AtomicInteger(1000);
     String prefix;
     User student,otherStudent,employer,otherEmployer;
@@ -171,10 +174,26 @@ class BusinessIntegrationTest {
     }
     @Test void notificationFailureRollsBackApprovalAndDoesNotCreateNotification() throws Exception {
         Job job=job("Rollback");Long id=apply(job);
+        clearInvocations(email);
         doThrow(new IllegalStateException("Injected notification failure")).when(notificationService).createNotification(eq(student.getId()),anyString(),eq("MESSAGE"),eq(id));
         mvc.perform(decision(id,employerToken,"APPROVED")).andExpect(status().isInternalServerError());
         assertThat(applications.findById(id).orElseThrow().getStatus()).isEqualTo(ApplicationStatus.PENDING);
         assertThat(notifications.countByUserIdAndStatus(student.getId(),NotificationStatus.UNREAD)).isEqualTo(1);
+        verifyNoInteractions(email);
+    }
+    @Test void applicationEmailsAreSentOnceAndProviderFailureKeepsTheDecision() throws Exception {
+        Job job = job("EmailDelivery");
+        Long id = apply(job);
+        verify(email).sendMessage(eq(employer.getEmail()), anyString(), contains(job.getTitle()), any(UUID.class));
+        verify(email).sendMessage(eq(student.getEmail()), anyString(), contains(job.getTitle()), any(UUID.class));
+
+        doThrow(new CampusEmail.DeliveryException()).when(email)
+                .sendMessage(eq(student.getEmail()), anyString(), contains("đã bị từ chối"), any(UUID.class));
+        mvc.perform(decision(id, employerToken, "REJECTED")).andExpect(status().isOk());
+        mvc.perform(decision(id, employerToken, "REJECTED")).andExpect(status().isConflict());
+        verify(email).sendMessage(eq(student.getEmail()), anyString(), contains("đã bị từ chối"), any(UUID.class));
+        assertThat(applications.findById(id).orElseThrow().getStatus()).isEqualTo(ApplicationStatus.REJECTED);
+        assertThat(notifications.countByUserIdAndStatus(student.getId(), NotificationStatus.UNREAD)).isEqualTo(2);
     }
     @Test void reviewsRequireOwnedApprovedCompletedApplicationAndAreUnique() throws Exception {
         Job job=job("Review");Long id=apply(job);
