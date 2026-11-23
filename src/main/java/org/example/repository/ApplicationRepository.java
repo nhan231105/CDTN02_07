@@ -17,6 +17,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Override @EntityGraph(attributePaths = {"job", "job.employer", "student"})
     Optional<Application> findById(Long id);
     @EntityGraph(attributePaths = {"job", "job.employer", "student"})
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     Page<Application> findByJobIdOrderByCreatedAtDesc(Long jobId, Pageable pageable);
     @EntityGraph(attributePaths = {"job", "job.employer", "student"})
     Page<Application> findByStudentIdOrderByCreatedAtDesc(Long studentId, Pageable pageable);

@@ -22,23 +22,53 @@ export async function request(
   })
   const token = sessionStorage.getItem(TOKEN_KEY)
   const headers = {}
-  if (token) headers.Authorization = 'Bearer ' + token
+  const publicAuth =
+    /^\/auth\/(?:login|register(?:\/verify)?|password\/(?:forgot|reset))$/.test(
+      endpoint,
+    )
+  if (token && !publicAuth) headers.Authorization = 'Bearer ' + token
   const isForm = data instanceof FormData
   if (data != null && !isForm) headers['Content-Type'] = 'application/json'
-  const response = await fetch(url, {
-    method,
-    headers,
-    signal,
-    body: data == null ? undefined : isForm ? data : JSON.stringify(data),
-  })
+  let response
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      signal,
+      body: data == null ? undefined : isForm ? data : JSON.stringify(data),
+    })
+  } catch (error) {
+    if (signal?.aborted) throw error
+    throw new ApiError(0, {
+      message:
+        'Chưa kết nối được với CampusWork. Vui lòng thử lại sau ít phút.',
+    })
+  }
   if (response.status === 401 && !endpoint.startsWith('/auth/')) {
     sessionStorage.removeItem(TOKEN_KEY)
     window.dispatchEvent(new Event('session-expired'))
   }
   if (response.status === 204) return null
+  if ([502, 503, 504].includes(response.status)) {
+    const details = await response.json().catch(() => null)
+    throw new ApiError(
+      response.status,
+      details?.code === 'EMAIL_UNAVAILABLE'
+        ? details
+        : {
+            message:
+              'Máy chủ có thể đang khởi động. Vui lòng thử lại sau ít phút.',
+          },
+    )
+  }
   if (!response.ok)
     throw new ApiError(response.status, await response.json().catch(() => ({})))
-  return blob ? response.blob() : response.json()
+  if (blob) return response.blob()
+  return response.json().catch(() => {
+    throw new ApiError(response.status, {
+      message: 'Máy chủ trả về dữ liệu không hợp lệ. Vui lòng thử lại.',
+    })
+  })
 }
 export function upload(endpoint, file) {
   const form = new FormData()
@@ -56,6 +86,15 @@ export async function download(endpoint, name) {
 }
 const api = {
   register: (data) => request('POST', '/auth/register', data),
+  verifyRegistration: (data) => request('POST', '/auth/register/verify', data),
+  forgotPassword: (data) => request('POST', '/auth/password/forgot', data),
+  resetPassword: (data) => request('POST', '/auth/password/reset', data),
+  conversation: (id, page) =>
+    request('GET', '/applications/' + id + '/messages', null, { page }),
+  sendMessage: (id, body) =>
+    request('POST', '/applications/' + id + '/messages', { body }),
+  readMessages: (id, through) =>
+    request('PATCH', '/applications/' + id + '/messages/read', { through }),
   login: (data) => request('POST', '/auth/login', data),
   profile: () => request('GET', '/me/profile'),
   saveProfile: (data) => request('PUT', '/me/profile', data),

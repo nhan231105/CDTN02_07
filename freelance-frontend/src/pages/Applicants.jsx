@@ -151,6 +151,14 @@ export default function Applicants() {
               )}
               {app.coverLetter && <blockquote>{app.coverLetter}</blockquote>}
               <div className="card-actions">
+                {app.status === 'APPROVED' && (
+                  <Link
+                    className="btn secondary small"
+                    to={'/applications/' + app.id + '/messages'}
+                  >
+                    Liên hệ ứng viên
+                  </Link>
+                )}
                 <button
                   className="text-button"
                   onClick={() =>

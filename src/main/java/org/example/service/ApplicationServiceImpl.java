@@ -23,6 +23,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
     private final StudentProfileRepository studentProfiles;
+    private final EmployerProfileRepository employerProfiles;
     @Override @Transactional
     public Application createApplication(Long jobId,Long studentId,CreateApplicationRequest request) {
         CurrentUser.requireRole(UserRole.STUDENT); CurrentUser.requireId(studentId);
@@ -43,7 +44,10 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setPhone(value(request.getPhone(),student.getPhone()));
         application.setCoverLetter(request.getCoverLetter()); application.setConsentDataUsage(true); application.setStatus(ApplicationStatus.PENDING);
         Application saved=applicationRepository.saveAndFlush(application);
-        notificationService.createNotification(job.getEmployer().getId(),"Có ứng tuyển mới cho công việc: "+job.getTitle(),"APPLICATION",saved.getId());
+        notificationService.createNotification(job.getEmployer().getId(),
+                "Có ứng tuyển mới cho công việc: " + job.getTitle(), "JOB_APPLICATIONS", job.getId());
+        notificationService.createNotification(student.getId(),"Bạn đã ứng tuyển vào vị trí " + job.getTitle()
+                + " tại " + employerName(job), "APPLICATION", saved.getId());
         return saved;
     }
     private static String value(String candidate,String fallback) { return candidate==null || candidate.isBlank()? fallback:candidate.trim(); }
@@ -100,8 +104,16 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new DomainException(409,"JOB_NOT_OPEN","Tin không còn cho phép xử lý đơn này");
         application.setStatus(decision); application.setDecidedAt(LocalDateTime.now());
         Application saved=applicationRepository.saveAndFlush(application);
-        notificationService.createNotification(application.getStudent().getId(),"Đơn ứng tuyển "+job.getTitle()+(decision==ApplicationStatus.APPROVED?" đã được duyệt":" đã bị từ chối"),"APPLICATION",id);
+        String position = job.getTitle() + " tại " + employerName(job);
+        boolean accepted = decision == ApplicationStatus.APPROVED;
+        notificationService.createNotification(application.getStudent().getId(), accepted
+                ? "Chúc mừng! Bạn đã được nhận vào vị trí " + position
+                : "Đơn ứng tuyển vị trí " + position + " đã bị từ chối", accepted ? "MESSAGE" : "APPLICATION", id);
         return saved;
+    }
+    private String employerName(Job job) {
+        return employerProfiles.findById(job.getEmployer().getId())
+                .map(EmployerProfile::getOrgName).orElse(job.getEmployer().getFullName());
     }
     @Override
     public boolean hasApplied(Long jobId,Long studentId) { return applicationRepository.countByJobIdAndStudentId(jobId,studentId)>0; }

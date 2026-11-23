@@ -9,7 +9,7 @@ import { Pagination } from '../components/UI'
 import { strongPassword } from '../utils/format'
 import api from '../api/apiService'
 vi.mock('../api/apiService', () => ({
-  default: { jobs: vi.fn(), unread: vi.fn() },
+  default: { jobs: vi.fn(), unread: vi.fn(), verifyRegistration: vi.fn() },
 }))
 const withAuth = (component, value) =>
   render(
@@ -63,6 +63,7 @@ describe('security and registration', () => {
     expect(strongPassword('Password123!')).toBe(true))
   it('registers and redirects to login without creating a session', async () => {
     const register = vi.fn().mockResolvedValue({ success: true })
+    api.verifyRegistration.mockResolvedValue({ success: true })
     withAuth(
       <Routes>
         <Route path="/" element={<Register />} />
@@ -82,11 +83,22 @@ describe('security and registration', () => {
     fireEvent.change(screen.getByLabelText('Mật khẩu'), {
       target: { value: 'Password123!' },
     })
+    const password = screen.getByLabelText('Mật khẩu')
+    expect(password).toHaveAttribute('type', 'password')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Hiện mật khẩu' })[0])
+    expect(password).toHaveAttribute('type', 'text')
+    expect(password).toHaveValue('Password123!')
+    fireEvent.click(screen.getByRole('button', { name: 'Ẩn mật khẩu' }))
+    expect(password).toHaveAttribute('type', 'password')
     fireEvent.change(screen.getByLabelText('Xác nhận mật khẩu'), {
       target: { value: 'Password123!' },
     })
     fireEvent.click(screen.getByRole('checkbox'))
-    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản →' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi mã xác minh →' }))
+    fireEvent.change(await screen.findByLabelText('Mã xác minh'), {
+      target: { value: '123456' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Xác minh email' }))
     expect(await screen.findByText('Registered login')).toBeInTheDocument()
     expect(register).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'STUDENT' }),

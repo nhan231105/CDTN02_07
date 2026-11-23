@@ -27,21 +27,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public RegisterResponse register(RegisterRequest request) {
-        log.info("Registering new user with email: {}, phone: {}", request.getEmail(), request.getPhone());
-
         request.setEmail(request.getEmail().trim().toLowerCase(java.util.Locale.ROOT));
         request.setFullName(request.getFullName().trim());
         if (request.getFullName().length() < 3) throw new org.example.common.DomainException(400,"INVALID_NAME","Họ tên cần ít nhất 3 ký tự sau khi bỏ khoảng trắng");
         // Validate email uniqueness
         if (userRepository.existsByEmail(request.getEmail())) {
-            log.warn("Registration failed: Email already exists - {}", request.getEmail());
-            throw new EmailAlreadyExistsException("Email nay da duoc dang ki");
+            throw new EmailAlreadyExistsException("Không thể đăng ký bằng thông tin này.");
         }
 
         // Validate phone uniqueness
         if (userRepository.existsByPhone(request.getPhone())) {
-            log.warn("Registration failed: Phone already exists - {}", request.getPhone());
-            throw new PhoneAlreadyExistsException("So dien thoai nay da duoc dang ki");
+            throw new PhoneAlreadyExistsException("Không thể đăng ký bằng thông tin này.");
         }
 
         // Convert role string to UserRole enum
@@ -73,8 +69,7 @@ public class UserServiceImpl implements UserService {
         } else {
             var profile = new org.example.entity.EmployerProfile(); profile.setUser(savedUser); profile.setOrgName(savedUser.getFullName()); employerProfiles.save(profile);
         }
-        log.info("User registered successfully: ID={}, Email={}, Phone={}", 
-                 savedUser.getId(), savedUser.getEmail(), savedUser.getPhone());
+        log.info("User registered successfully: ID={}", savedUser.getId());
 
         // Return response
         RegisterResponse response = new RegisterResponse();
@@ -91,12 +86,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
-        log.info("Login attempt with identifier: {}", request.getIdentifier());
-
         // Find user by email or phone
         User user = userRepository.findByEmailOrPhone(request.getIdentifier().trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> {
-                    log.warn("Login failed: User not found - {}", request.getIdentifier());
                     return new UserNotFoundException("Ten dang nhap hoac mat khau chua dung");
                 });
 
@@ -107,7 +99,7 @@ public class UserServiceImpl implements UserService {
             throw new org.example.common.DomainException(403,"ACCOUNT_LOCKED","Tài khoản đã bị khóa");
         }
 
-        log.info("User logged in successfully: ID={}, Email={}", user.getId(), user.getEmail());
+        log.info("User logged in successfully: ID={}", user.getId());
 
         // Return login response
         LoginResponse response = new LoginResponse();

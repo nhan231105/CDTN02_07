@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
 const API = 'http://localhost:8082/api'
 const password = 'TestPass123!'
+const outbox = process.env.CAMPUSWORK_E2E_OUTBOX
+const codeFor = (email) => readFile(join(outbox, email), 'utf8')
 function pdfBuffer() {
   let pdf = '%PDF-1.4\n'
   const parts = [
@@ -42,7 +46,9 @@ async function login(page, email, expected) {
     })
   await page
     .getByLabel('Mật khẩu', { exact: true })
-    .fill(email.endsWith('@demo.local') ? process.env.APP_DEMO_PASSWORD : password)
+    .fill(
+      email.endsWith('@demo.local') ? process.env.APP_DEMO_PASSWORD : password,
+    )
   await page.getByRole('button', { name: 'Đăng nhập →', exact: true }).click()
   await expect(page).toHaveURL(new RegExp(expected))
 }
@@ -52,19 +58,28 @@ test('7 Use Cases persist through UI, API and H2', async ({
   request,
 }) => {
   test.setTimeout(120000)
+  test.skip(!outbox, 'Cần backend E2E với hộp thư thử nghiệm.')
   const unique = Date.now().toString().slice(-8)
   const studentEmail = 'ui.student.' + unique + '@test.local'
   const employerEmail = 'ui.employer.' + unique + '@test.local'
+  const registration = {
+    fullName: 'UI Employer ' + unique,
+    email: employerEmail,
+    phone: '09' + unique,
+    password,
+    role: 'EMPLOYER',
+  }
   const employerRegistration = await request.post(API + '/auth/register', {
-    data: {
-      fullName: 'UI Employer ' + unique,
-      email: employerEmail,
-      phone: '09' + unique,
-      password,
-      role: 'EMPLOYER',
-    },
+    data: registration,
   })
-  expect(employerRegistration.status()).toBe(201)
+  expect(employerRegistration.status()).toBe(202)
+  const employerVerification = await request.post(
+    API + '/auth/register/verify',
+    {
+      data: { registration, code: await codeFor(employerEmail) },
+    },
+  )
+  expect(employerVerification.status()).toBe(201)
   const studentContext = await browser.newContext()
   const employerContext = await browser.newContext()
   const student = await studentContext.newPage()
@@ -80,13 +95,24 @@ test('7 Use Cases persist through UI, API and H2', async ({
   await student.getByLabel('Email', { exact: true }).fill(studentEmail)
   await student.getByLabel('Số điện thoại', { exact: true }).fill('08' + unique)
   await student.getByLabel('Mật khẩu', { exact: true }).fill(password)
+  await student.getByRole('button', { name: 'Hiện mật khẩu' }).first().click()
+  await expect(student.getByLabel('Mật khẩu', { exact: true })).toHaveAttribute(
+    'type',
+    'text',
+  )
+  await student.getByRole('button', { name: 'Ẩn mật khẩu' }).click()
   await student.getByLabel('Xác nhận mật khẩu').fill(password)
   await student.getByRole('checkbox').check()
   await student
-    .getByRole('button', { name: 'Tạo tài khoản →', exact: true })
+    .getByRole('button', { name: 'Gửi mã xác minh →', exact: true })
     .click()
+  await expect(student.getByLabel('Mã xác minh')).toBeVisible()
+  await student.getByLabel('Mã xác minh').fill(await codeFor(studentEmail))
+  await student.getByRole('button', { name: 'Xác minh email' }).click()
   await expect(student).toHaveURL(/\/login$/)
-  await expect(student.getByRole('status')).toContainText('Đăng ký thành công')
+  await expect(
+    student.getByText('Email đã xác minh.', { exact: false }),
+  ).toBeVisible()
   expect(
     await student.evaluate(() => sessionStorage.getItem('campuswork.token')),
   ).toBeNull()
@@ -96,7 +122,7 @@ test('7 Use Cases persist through UI, API and H2', async ({
     .getByLabel('Giới thiệu bản thân')
     .fill('Sinh viên yêu thích thiết kế và phát triển sản phẩm số.')
   await student.getByRole('button', { name: 'Lưu hồ sơ', exact: true }).click()
-  await expect(student.getByRole('status')).toHaveText(
+  await expect(student.getByRole('status')).toContainText(
     'Đã lưu hồ sơ thành công.',
   )
   await student
@@ -106,11 +132,11 @@ test('7 Use Cases persist through UI, API and H2', async ({
       mimeType: 'application/pdf',
       buffer: pdfBuffer(),
     })
-  await expect(student.getByRole('status')).toHaveText('CV đã được tải lên.')
+  await expect(student.getByRole('status')).toContainText('CV đã được tải lên.')
   await student
     .locator('input[type=file][accept="image/png,image/jpeg"]')
     .setInputFiles('src/assets/hero.png')
-  await expect(student.getByRole('status')).toHaveText(
+  await expect(student.getByRole('status')).toContainText(
     'Ảnh đại diện đã được cập nhật.',
   )
   await student.reload()
@@ -130,7 +156,7 @@ test('7 Use Cases persist through UI, API and H2', async ({
     .getByLabel('Ngành nghề', { exact: true })
     .selectOption('Design')
   await employer.getByLabel('Địa điểm', { exact: true }).fill('UI City')
-  await employer.getByLabel('Mức lương (VNĐ)').fill('3000000')
+  await employer.getByLabel('Mức lương (VNĐ)').fill('35000')
   await employer
     .getByLabel('Hạn ứng tuyển')
     .fill(new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10))
@@ -148,14 +174,17 @@ test('7 Use Cases persist through UI, API and H2', async ({
 
   await student.goto('/jobs')
   await student.getByLabel('Từ khóa tìm kiếm').fill(title)
-  await student.getByRole('button', { name: 'Tìm việc ↗', exact: true }).click()
+  await student.getByRole('button', { name: 'Tìm việc', exact: true }).click()
   await expect(
     student.getByRole('heading', { name: title, exact: true }),
   ).toBeVisible()
   await expect(student).toHaveURL(/keyword=/)
   await student.getByRole('heading', { name: title, exact: true }).click()
-  await student
-    .getByRole('button', { name: 'Ứng tuyển ngay ↗', exact: true })
+  const detail = student.getByRole('article').filter({
+    has: student.getByRole('heading', { name: title, exact: true }),
+  })
+  await detail
+    .getByRole('button', { name: 'Ứng tuyển ngay', exact: true })
     .click()
   await student
     .getByLabel('Thư giới thiệu', { exact: true })
@@ -168,11 +197,11 @@ test('7 Use Cases persist through UI, API and H2', async ({
     'Ứng tuyển thành công',
   )
   await expect(
-    student.getByRole('button', { name: '✓ Đã ứng tuyển', exact: true }),
+    detail.getByRole('button', { name: 'Đã ứng tuyển', exact: true }),
   ).toBeDisabled()
   await student.reload()
   await expect(
-    student.getByRole('button', { name: '✓ Đã ứng tuyển', exact: true }),
+    detail.getByRole('button', { name: 'Đã ứng tuyển', exact: true }),
   ).toBeDisabled()
 
   const jobCard = employer.locator('article').filter({
@@ -200,21 +229,29 @@ test('7 Use Cases persist through UI, API and H2', async ({
   ).toBeVisible()
 
   await student.goto('/notifications')
-  await expect(
-    student.locator('.notification-card.unread').filter({ hasText: title }),
-  ).toHaveCount(1)
-  await student
+  const accepted = student
     .locator('.notification-card')
-    .filter({ hasText: title })
-    .getByRole('button', { name: 'Đánh dấu đã đọc' })
-    .click()
-  await expect(
-    student.locator('.notification-card.unread').filter({ hasText: title }),
-  ).toHaveCount(0)
+    .filter({ hasText: 'Chúc mừng! Bạn đã được nhận vào vị trí ' + title })
+  await expect(accepted).toHaveClass(/unread/)
+  await accepted.getByRole('button', { name: 'Đánh dấu đã đọc' }).click()
   await student.reload()
+  await expect(accepted).toContainText('Đã đọc')
+  await accepted.getByRole('link', { name: 'Liên hệ nhà tuyển dụng' }).click()
+  await employer.getByRole('link', { name: 'Liên hệ ứng viên' }).click()
+  await student
+    .getByLabel('Tin nhắn', { exact: true })
+    .fill('Em có thể bắt đầu vào thứ Hai.')
+  await student.getByRole('button', { name: 'Gửi tin nhắn' }).click()
+  await employer.reload()
   await expect(
-    student.locator('.notification-card').filter({ hasText: title }),
-  ).toContainText('Đã đọc')
+    employer.getByText('Em có thể bắt đầu vào thứ Hai.'),
+  ).toBeVisible()
+  await employer
+    .getByLabel('Tin nhắn', { exact: true })
+    .fill('Hẹn em thứ Hai lúc 9 giờ.')
+  await employer.getByRole('button', { name: 'Gửi tin nhắn' }).click()
+  await student.reload()
+  await expect(student.getByText('Hẹn em thứ Hai lúc 9 giờ.')).toBeVisible()
 
   await employer.goto('/employer/jobs')
   const card = employer.locator('article').filter({
@@ -264,6 +301,49 @@ test('7 Use Cases persist through UI, API and H2', async ({
   expect(browserErrors).toEqual([])
   await studentContext.close()
   await employerContext.close()
+})
+
+test('password reset and CampusWork browser identity', async ({ page }) => {
+  test.skip(!outbox, 'Cần backend E2E với hộp thư thử nghiệm.')
+  const unique = Date.now().toString().slice(-8)
+  const email = 'reset.' + unique + '@test.local'
+  await page.goto('/register')
+  await expect(page).toHaveTitle(/CampusWork/)
+  for (const size of [16, 32, 48, 180]) {
+    const rel = size === 180 ? 'apple-touch-icon' : 'icon'
+    const icon = page.locator(`link[rel="${rel}"][sizes="${size}x${size}"]`)
+    await expect(icon).toHaveAttribute('href', `/campuswork-${size}.png`)
+    const response = await page.request.get(`/campuswork-${size}.png`)
+    expect(response.ok()).toBe(true)
+    const png = await response.body()
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([size, size])
+  }
+  await page.getByLabel('Họ và tên').fill('Kiểm thử đặt lại mật khẩu')
+  await page.getByLabel('Email', { exact: true }).fill(email)
+  await page.getByLabel('Số điện thoại').fill('07' + unique)
+  await page.getByLabel('Mật khẩu', { exact: true }).fill(password)
+  await page.getByLabel('Xác nhận mật khẩu').fill(password)
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button', { name: 'Gửi mã xác minh' }).click()
+  await expect(page.getByLabel('Mã xác minh')).toBeVisible()
+  await page.getByLabel('Mã xác minh').fill(await codeFor(email))
+  await page.getByRole('button', { name: 'Xác minh email' }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await page.getByRole('link', { name: 'Quên mật khẩu?' }).click()
+  await page.getByLabel('Email tài khoản').fill(email)
+  await page.getByRole('button', { name: 'Gửi mã xác minh' }).click()
+  await expect(page.getByLabel('Mã xác minh')).toBeVisible()
+  await page.getByLabel('Mã xác minh').fill(await codeFor(email))
+  await page.getByLabel('Mật khẩu mới', { exact: true }).fill('NewTestPass123!')
+  await page.getByLabel('Xác nhận mật khẩu mới').fill('NewTestPass123!')
+  await page.getByRole('button', { name: 'Lưu mật khẩu mới' }).click()
+  await expect(
+    page.getByText('Đã đổi mật khẩu.', { exact: false }),
+  ).toBeVisible()
+  await page.getByLabel('Email hoặc số điện thoại').fill(email)
+  await page.getByLabel('Mật khẩu', { exact: true }).fill('NewTestPass123!')
+  await page.getByRole('button', { name: 'Đăng nhập' }).click()
+  await expect(page).toHaveURL(/\/jobs$/)
 })
 
 for (const width of [360, 768, 1440]) {

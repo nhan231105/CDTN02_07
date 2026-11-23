@@ -1,3 +1,4 @@
+import PasswordInput from '../components/PasswordInput'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { redirectAfterLogin, useAuth } from '../context/auth'
@@ -7,7 +8,6 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ identifier: '', password: '' })
-  const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const submit = async (e) => {
@@ -59,14 +59,13 @@ export default function Login() {
         <span className="eyebrow">CHÀO MỪNG TRỞ LẠI</span>
         <h2>Đăng nhập</h2>
         <p className="muted">Tiếp tục hành trình nghề nghiệp của bạn.</p>
-        <Feedback
-          error={error}
-          message={
-            location.state?.registered
-              ? 'Đăng ký thành công. Bạn có thể đăng nhập ngay.'
-              : ''
-          }
-        />
+        <Feedback error={error} />
+        {location.state?.registered && (
+          <p role="status">Email đã xác minh. Bạn có thể đăng nhập ngay.</p>
+        )}
+        {location.state?.passwordReset && (
+          <p role="status">Đã đổi mật khẩu. Hãy đăng nhập bằng mật khẩu mới.</p>
+        )}
         <form onSubmit={submit}>
           <Field id="identifier" label="Email hoặc số điện thoại">
             <input
@@ -79,24 +78,17 @@ export default function Login() {
             />
           </Field>
           <Field id="password" label="Mật khẩu">
-            <div className="password-input">
-              <input
-                id="password"
-                type={show ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-              <button
-                type="button"
-                onClick={() => setShow(!show)}
-                aria-label={show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              >
-                {show ? 'Ẩn' : 'Hiện'}
-              </button>
-            </div>
+            <PasswordInput
+              id="password"
+              autoComplete="current-password"
+              required
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
           </Field>
+          <p>
+            <Link to="/forgot-password">Quên mật khẩu?</Link>
+          </p>
           <button className="btn primary full" disabled={busy}>
             {busy ? 'Đang đăng nhập…' : 'Đăng nhập →'}
           </button>

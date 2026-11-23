@@ -1,3 +1,4 @@
+import PasswordInput from '../components/PasswordInput'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api, { upload } from '../api/apiService'
@@ -480,9 +481,8 @@ export default function EmployerProfile() {
           </div>
           <div className="form-grid">
             <Field id="newPassword" label="Mật khẩu mới (nếu muốn đổi)">
-              <input
+              <PasswordInput
                 id="newPassword"
-                type="password"
                 autoComplete="new-password"
                 value={account.password}
                 onChange={(e) =>
@@ -491,9 +491,8 @@ export default function EmployerProfile() {
               />
             </Field>
             <Field id="currentPassword" label="Mật khẩu hiện tại">
-              <input
+              <PasswordInput
                 id="currentPassword"
-                type="password"
                 autoComplete="current-password"
                 required
                 value={account.currentPassword}

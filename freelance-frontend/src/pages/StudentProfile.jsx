@@ -1,3 +1,4 @@
+import PasswordInput from '../components/PasswordInput'
 import { useMessage } from '../context/toast'
 import { useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
@@ -567,9 +568,8 @@ export default function StudentProfile({ employer = false }) {
                 </Field>
               </div>
               <Field id="newPassword" label="Mật khẩu mới (nếu muốn đổi)">
-                <input
+                <PasswordInput
                   id="newPassword"
-                  type="password"
                   autoComplete="new-password"
                   value={account.password}
                   onChange={(e) =>
@@ -578,9 +578,8 @@ export default function StudentProfile({ employer = false }) {
                 />
               </Field>
               <Field id="currentPassword" label="Mật khẩu hiện tại">
-                <input
+                <PasswordInput
                   id="currentPassword"
-                  type="password"
                   autoComplete="current-password"
                   required
                   value={account.currentPassword}

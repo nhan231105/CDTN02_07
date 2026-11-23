@@ -47,4 +47,5 @@ export const strongPassword = (value) =>
   value.length >= 8 &&
   /[A-Z]/.test(value) &&
   /[a-z]/.test(value) &&
-  /[^A-Za-z0-9]/.test(value)
+  /[^A-Za-z0-9\s]/.test(value) &&
+  new TextEncoder().encode(value).length <= 72

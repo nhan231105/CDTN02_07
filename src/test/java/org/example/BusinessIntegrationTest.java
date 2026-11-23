@@ -167,14 +167,14 @@ class BusinessIntegrationTest {
     @Test void simultaneousApproveRejectHasOneDecisionAndOneStudentNotification() throws Exception {
         Job job=job("ConcurrentDecision");Long id=apply(job);
         List<Integer> results=concurrently(() -> mvc.perform(decision(id,employerToken,"APPROVED")).andReturn().getResponse().getStatus(),() -> mvc.perform(decision(id,employerToken,"REJECTED")).andReturn().getResponse().getStatus());
-        assertThat(results).containsExactlyInAnyOrder(200,409);assertThat(notifications.countByUserIdAndStatus(student.getId(),NotificationStatus.UNREAD)).isEqualTo(1);
+        assertThat(results).containsExactlyInAnyOrder(200,409);assertThat(notifications.countByUserIdAndStatus(student.getId(),NotificationStatus.UNREAD)).isEqualTo(2);
     }
     @Test void notificationFailureRollsBackApprovalAndDoesNotCreateNotification() throws Exception {
         Job job=job("Rollback");Long id=apply(job);
-        doThrow(new IllegalStateException("Injected notification failure")).when(notificationService).createNotification(eq(student.getId()),anyString(),eq("APPLICATION"),eq(id));
+        doThrow(new IllegalStateException("Injected notification failure")).when(notificationService).createNotification(eq(student.getId()),anyString(),eq("MESSAGE"),eq(id));
         mvc.perform(decision(id,employerToken,"APPROVED")).andExpect(status().isInternalServerError());
         assertThat(applications.findById(id).orElseThrow().getStatus()).isEqualTo(ApplicationStatus.PENDING);
-        assertThat(notifications.countByUserIdAndStatus(student.getId(),NotificationStatus.UNREAD)).isZero();
+        assertThat(notifications.countByUserIdAndStatus(student.getId(),NotificationStatus.UNREAD)).isEqualTo(1);
     }
     @Test void reviewsRequireOwnedApprovedCompletedApplicationAndAreUnique() throws Exception {
         Job job=job("Review");Long id=apply(job);
@@ -194,12 +194,34 @@ class BusinessIntegrationTest {
         Job job=job("Inbox");Long id=apply(job);mvc.perform(decision(id,employerToken,"REJECTED")).andExpect(status().isOk());
         JsonNode inbox=mapper.readTree(mvc.perform(get("/me/notifications").header("Authorization","Bearer "+studentToken)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         long notification=inbox.path("content").get(0).path("id").asLong();
-        mvc.perform(get("/me/notifications/count/unread").header("Authorization","Bearer "+studentToken)).andExpect(content().string("1"));
+        mvc.perform(get("/me/notifications/count/unread").header("Authorization","Bearer "+studentToken)).andExpect(content().string("2"));
         mvc.perform(get("/me/notifications/"+notification).header("Authorization","Bearer "+otherStudentToken)).andExpect(status().isForbidden());
         mvc.perform(patch("/me/notifications/"+notification+"/read").header("Authorization","Bearer "+otherStudentToken)).andExpect(status().isForbidden());
         mvc.perform(get("/me/notifications").param("userId",student.getId().toString()).header("Authorization","Bearer "+otherStudentToken)).andExpect(status().isForbidden());
         for(int attempt=0;attempt<2;attempt++)mvc.perform(patch("/me/notifications/"+notification+"/read").header("Authorization","Bearer "+studentToken)).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("READ"));
-        mvc.perform(get("/me/notifications/count/unread").header("Authorization","Bearer "+studentToken)).andExpect(content().string("0"));
+        mvc.perform(get("/me/notifications/count/unread").header("Authorization","Bearer "+studentToken)).andExpect(content().string("1"));
+    }
+    @Test void approvedApplicationAllowsOnlyItsParticipantsToReadAndSendMessages() throws Exception {
+        Job job = job("Conversation");
+        Long id = apply(job);
+        String path = "/applications/" + id + "/messages";
+        String body = "{\"body\":\"Hẹn gặp lúc 9 giờ.\"}";
+        mvc.perform(get(path).header("Authorization", "Bearer " + studentToken)).andExpect(status().isForbidden());
+        mvc.perform(decision(id, employerToken, "APPROVED")).andExpect(status().isOk());
+        mvc.perform(get(path).header("Authorization", "Bearer " + otherStudentToken)).andExpect(status().isForbidden());
+        mvc.perform(post(path).header("Authorization", "Bearer " + otherEmployerToken)
+                .contentType("application/json").content(body)).andExpect(status().isForbidden());
+        String sent = mvc.perform(post(path).header("Authorization", "Bearer " + employerToken)
+                .contentType("application/json").content(body)).andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long messageId = mapper.readTree(sent).path("id").asLong();
+        mvc.perform(get(path).header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.unread").value(1))
+                .andExpect(jsonPath("$.messages[0].mine").value(false));
+        mvc.perform(patch(path + "/read").header("Authorization", "Bearer " + studentToken)
+                .contentType("application/json").content("{\"through\":" + messageId + "}")).andExpect(status().isNoContent());
+        mvc.perform(get(path).header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.unread").value(0));
     }
     @Test void replacingProfileCvKeepsOriginalApplicationSnapshot() throws Exception {
         Job job=job("Snapshot");byte[] first=pdf("Original CV");String original=upload(studentToken,first);

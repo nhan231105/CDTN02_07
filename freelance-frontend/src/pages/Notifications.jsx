@@ -1,5 +1,5 @@
 import { useAuth } from '../context/auth'
-import { date } from '../utils/format'
+import { datetime } from '../utils/format'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/apiService'
@@ -57,6 +57,16 @@ export default function Notifications() {
     }
   }
   const target = (n) => {
+    if (n.relatedType === 'MESSAGE' && n.relatedId)
+      return [
+        '/applications/' + n.relatedId + '/messages',
+        user.role === 'STUDENT' ? 'Liên hệ nhà tuyển dụng →' : 'Mở hội thoại →',
+      ]
+    if (user.role === 'EMPLOYER' && n.relatedType === 'JOB_APPLICATIONS')
+      return [
+        '/employer/jobs/' + n.relatedId + '/applications',
+        'Xem hồ sơ ứng viên →',
+      ]
     if (user.role === 'ADMIN') return ['/admin', 'Mở trang quản trị →']
     if (user.role === 'EMPLOYER' && n.relatedType === 'INVITATION')
       return ['/employer/talent', 'Xem kho ứng viên →']
@@ -103,7 +113,7 @@ export default function Notifications() {
               <div>
                 <p>{n.message}</p>
                 <small>
-                  {date(n.createdAt)} ·{' '}
+                  {datetime(n.createdAt)} ·{' '}
                   {n.status === 'UNREAD' ? 'Chưa đọc' : 'Đã đọc'}
                 </small>
                 <div className="notification-actions">

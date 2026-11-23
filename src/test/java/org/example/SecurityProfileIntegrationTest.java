@@ -24,6 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc @ActiveProfiles("test")
 class SecurityProfileIntegrationTest {
     @Autowired MockMvc mvc;@Autowired ObjectMapper json;@Autowired UserRepository users;@Autowired StudentProfileRepository students;
+    @org.springframework.boot.test.mock.mockito.MockBean org.example.service.CampusEmail mail;
+    @Autowired EmailChallengeRepository challenges;
     @Autowired EmployerProfileRepository employers;@Autowired BCryptPasswordEncoder passwords;@Autowired JwtService jwt;
     @Test
     void productionCorsAcceptsConfiguredOriginsAndRejectsOthers() throws Exception {
@@ -73,7 +75,19 @@ class SecurityProfileIntegrationTest {
 
     private String body(Object value)throws Exception{return json.writeValueAsString(value);}
     private Map<String,String> data(String role){String key=UUID.randomUUID().toString().substring(0,8);return Map.of("fullName","Test User "+key,"email",key+"@test.local","phone","09"+String.format("%08d",Math.floorMod(UUID.randomUUID().hashCode(),100000000)),"password","GoodPass123!","role",role);}
-    private JsonNode register(Map<String,String> data)throws Exception{return json.readTree(mvc.perform(post("/auth/register").contentType("application/json").content(body(data))).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("data");}
+    private JsonNode register(Map<String,String> data)throws Exception{
+        var code = requestCode("/auth/register", data, data.get("email"));
+        return json.readTree(mvc.perform(post("/auth/register/verify").contentType("application/json")
+                .content(body(Map.of("registration", data, "code", code))))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("data");
+    }
+    private String requestCode(String path, Map<String,String> data, String email)throws Exception{
+        var code = org.mockito.ArgumentCaptor.forClass(String.class);
+        mvc.perform(post(path).contentType("application/json").content(body(data))).andExpect(status().isAccepted());
+        org.mockito.Mockito.verify(mail).send(org.mockito.ArgumentMatchers.eq(email.toLowerCase(Locale.ROOT)),
+                org.mockito.ArgumentMatchers.anyString(), code.capture());
+        return code.getValue();
+    }
     private String login(Map<String,String> data)throws Exception{return json.readTree(mvc.perform(post("/auth/login").contentType("application/json").content(body(Map.of("identifier",data.get("email"),"password",data.get("password"))))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).at("/data/accessToken").asText();}
     private String student()throws Exception{var d=data("STUDENT");register(d);return login(d);}
     private byte[] pdf()throws Exception{try(var doc=new PDDocument();var out=new ByteArrayOutputStream()){doc.addPage(new PDPage());doc.save(out);return out.toByteArray();}}
@@ -85,8 +99,59 @@ class SecurityProfileIntegrationTest {
     @Test void registrationRejectsAdminWeakPasswordAndDuplicate()throws Exception{
         mvc.perform(post("/auth/register").contentType("application/json").content(body(data("ADMIN")))).andExpect(status().isBadRequest());
         var weak=new HashMap<>(data("STUDENT"));weak.put("password","123456");mvc.perform(post("/auth/register").contentType("application/json").content(body(weak))).andExpect(status().isBadRequest()).andExpect(jsonPath("$.fieldErrors.password").exists());
-        var d=data("STUDENT");register(d);mvc.perform(post("/auth/register").contentType("application/json").content(body(d))).andExpect(status().isConflict());
+        var d=data("STUDENT");register(d);
+        mvc.perform(post("/auth/register").contentType("application/json").content(body(d))).andExpect(status().isTooManyRequests());
     }
+    @Test void otpExpiresAndResendObsoletesPreviousCode() throws Exception {
+        var d = data("STUDENT");
+        String email = d.get("email");
+        String code = requestCode("/auth/register", d, email);
+        assertFalse(users.existsByEmail(email));
+        mvc.perform(post("/auth/login").contentType("application/json")
+                .content(body(Map.of("identifier", email, "password", d.get("password")))))
+                .andExpect(status().isUnauthorized());
+        var entry = challenges.findById("register:" + email).orElseThrow();
+        assertNotEquals(code, entry.getCodeHash());
+        mvc.perform(post("/auth/register").contentType("application/json").content(body(d)))
+                .andExpect(status().isTooManyRequests());
+        entry.setSentAt(Instant.now().minusSeconds(301));
+        challenges.saveAndFlush(entry);
+        mvc.perform(post("/auth/register/verify").contentType("application/json")
+                .content(body(Map.of("registration", d, "code", code)))).andExpect(status().isBadRequest());
+        org.mockito.Mockito.clearInvocations(mail);
+        String current = requestCode("/auth/register", d, email);
+        assertNotEquals(code, current);
+        mvc.perform(post("/auth/register/verify").contentType("application/json")
+                .content(body(Map.of("registration", d, "code", code)))).andExpect(status().isBadRequest());
+        String wrong = current.equals("000000") ? "111111" : "000000";
+        for (int attempt = 0; attempt < 4; attempt++) {
+            mvc.perform(post("/auth/register/verify").contentType("application/json")
+                    .content(body(Map.of("registration", d, "code", wrong)))).andExpect(status().isBadRequest());
+        }
+        mvc.perform(post("/auth/register/verify").contentType("application/json")
+                .content(body(Map.of("registration", d, "code", current)))).andExpect(status().isBadRequest());
+        assertFalse(users.existsByEmail(email));
+    }
+
+    @Test void passwordResetConsumesCodeAndRevokesTheOldToken() throws Exception {
+        var d = data("STUDENT");
+        register(d);
+        String token = login(d);
+        String email = d.get("email");
+        org.mockito.Mockito.clearInvocations(mail);
+        String code = requestCode("/auth/password/forgot", Map.of("email", email), email);
+        var reset = Map.of("email", email, "code", code, "password", "NewPassword123!");
+        mvc.perform(post("/auth/password/reset").contentType("application/json").content(body(reset)))
+                .andExpect(status().isOk());
+        mvc.perform(post("/auth/password/reset").contentType("application/json").content(body(reset)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/me/profile").header("Authorization", "Bearer " + token)).andExpect(status().isUnauthorized());
+        mvc.perform(post("/auth/login").contentType("application/json")
+                .content(body(Map.of("identifier", email, "password", d.get("password"))))).andExpect(status().isUnauthorized());
+        mvc.perform(post("/auth/login").contentType("application/json")
+                .content(body(Map.of("identifier", email, "password", reset.get("password"))))).andExpect(status().isOk());
+    }
+
     @Test void emailNormalizationPhoneLoginAndWrongCredentials()throws Exception{
         var d=new HashMap<>(data("STUDENT"));d.put("email",d.get("email").toUpperCase(Locale.ROOT));register(d);
         mvc.perform(post("/auth/login").contentType("application/json").content(body(Map.of("identifier",d.get("phone"),"password",d.get("password"))))).andExpect(status().isOk()).andExpect(jsonPath("$.data.accessToken").isNotEmpty());

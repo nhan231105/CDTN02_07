@@ -163,6 +163,14 @@ export default function Applications() {
               </ol>
               {app.coverLetter && <p className="muted">{app.coverLetter}</p>}
               <div className="card-actions">
+                {app.status === 'APPROVED' && (
+                  <Link
+                    className="btn secondary small"
+                    to={'/applications/' + app.id + '/messages'}
+                  >
+                    Liên hệ nhà tuyển dụng
+                  </Link>
+                )}
                 <button
                   className="text-button"
                   onClick={() =>

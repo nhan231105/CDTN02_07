@@ -1033,6 +1033,9 @@ html .fd-field select {
 }
 
 /* Bộ lọc trượt từ bên phải, danh sách việc co lại bên trái */
+.jobs-dark {
+  overflow-x: clip;
+}
 .jobs-dark .jobs-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 0px;

@@ -107,11 +107,12 @@ class Smoke:
 
     def run(self, samples: int):
         password = os.environ["APP_DEMO_PASSWORD"]
+        outbox = Path(os.environ["CAMPUSWORK_E2E_OUTBOX"])
         suffix = secrets.token_hex(5)
         phone = lambda: "0" + str(secrets.randbelow(900000000) + 100000000)
-        student_data = {"fullName": "QA Student " + suffix, "email": f"qa.student.{suffix}@example.test",
+        student_data = {"fullName": "QA Student " + suffix, "email": f"qa.student.{suffix}@test.local",
                         "phone": phone(), "password": password, "role": "STUDENT"}
-        employer_data = {"fullName": "QA Employer " + suffix, "email": f"qa.employer.{suffix}@example.test",
+        employer_data = {"fullName": "QA Employer " + suffix, "email": f"qa.employer.{suffix}@test.local",
                          "phone": phone(), "password": password, "role": "EMPLOYER"}
         self.expect("Health endpoint", "GET", "/auth/health", 200)
         self.expect("UC01 missing JWT", "GET", "/me/profile", 401)
@@ -122,12 +123,16 @@ class Smoke:
                     data={**student_data, "role": "ADMIN"})
         self.expect("UC02 reject weak password", "POST", "/auth/register", 400,
                     data={**student_data, "password": "123456"})
-        self.expect("UC02 register student", "POST", "/auth/register", 201, data=student_data)
-        self.expect("UC02 duplicate email", "POST", "/auth/register", 409,
+        for account in (student_data, employer_data):
+            self.expect("UC02 request " + account["role"], "POST", "/auth/register", 202, data=account)
+            code = (outbox / account["email"]).read_text(encoding="utf-8")
+            self.expect("UC02 verify " + account["role"], "POST", "/auth/register/verify", 201,
+                        data={"registration": account, "code": code})
+        self.expect("UC02 resend cooldown", "POST", "/auth/register", 429,
                     data={**student_data, "phone": phone()})
-        self.expect("UC02 duplicate phone", "POST", "/auth/register", 409,
-                    data={**student_data, "email": f"duplicate.{suffix}@example.test"})
-        self.expect("UC02 register employer", "POST", "/auth/register", 201, data=employer_data)
+        duplicate = {**student_data, "email": f"duplicate.{suffix}@test.local"}
+        self.expect("UC02 neutral response for duplicate phone", "POST", "/auth/register", 202, data=duplicate)
+        self.assert_that("UC02 no delivery for duplicate phone", not (outbox / duplicate["email"]).exists())
         student = self.login(student_data["email"], password, "UC01 student email login")
         employer = self.login(employer_data["phone"], password, "UC01 employer phone login")
         student_b = self.login("student.b@demo.local", password, "UC01 Student B seed login")
@@ -203,7 +208,8 @@ class Smoke:
         self.expect("Employer cannot decide twice", "PATCH", f"/applications/{aid}/decision", 409,
                     token=et, data={"decision": "REJECTED"})
         notifications = self.expect("UC07 notification list", "GET", "/me/notifications", 200, token=st)
-        matching = [n for n in notifications["content"] if n.get("relatedId") == aid]
+        matching = [n for n in notifications["content"]
+                    if n.get("relatedId") == aid and n.get("relatedType") == "MESSAGE"]
         self.assert_that("UC07 decision created exactly one notification", len(matching) == 1)
         nid = matching[0]["id"]
         self.expect("UC07 Student B cannot read A notification", "GET", f"/me/notifications/{nid}", 403, token=sb)
@@ -252,8 +258,11 @@ class Smoke:
             statuses = sorted(f.result()[0] for f in futures)
         self.assert_that("Concurrent decision gives one 200 and one 409", statuses == [200, 409])
         notifications = self.expect("Concurrent decision notification reload", "GET", "/me/notifications", 200, token=st)
-        self.assert_that("Concurrent decision creates exactly one notification",
-                         len([n for n in notifications["content"] if n.get("relatedId") == race_aid]) == 1)
+        decisions = [n for n in notifications["content"]
+                     if n.get("relatedId") == race_aid
+                     and race_job["title"] in n["message"]
+                     and (n["message"].startswith("Chúc mừng!") or n["message"].endswith("đã bị từ chối"))]
+        self.assert_that("Concurrent decision creates exactly one notification", len(decisions) == 1)
         self.expect("UC03 account requires current password", "PATCH", "/me/account", 400, token=st,
                     data={"email": f"changed.{suffix}@example.test"})
         self.expect("UC03 account contact change", "PATCH", "/me/account", 200, token=st,
@@ -279,6 +288,8 @@ def main():
         parser.error("--benchmark-samples must be between 1 and 1000")
     if not os.environ.get("APP_DEMO_PASSWORD"):
         parser.error("Set APP_DEMO_PASSWORD for the isolated demo fixtures")
+    if not os.environ.get("CAMPUSWORK_E2E_OUTBOX"):
+        parser.error("Set CAMPUSWORK_E2E_OUTBOX for the local verification emails")
     smoke = Smoke(args.base_url)
     try:
         smoke.run(args.benchmark_samples)

@@ -1093,12 +1093,93 @@ dd {
 }
 .password-input button {
   position: absolute;
-  right: 13px;
-  top: 12px;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  min-height: 40px;
   background: none;
   border: 0;
   font-size: 11px;
   color: #8a95a4;
+}
+.role-options {
+  border: 0;
+  margin: 0 0 1rem;
+  padding: 0;
+  min-inline-size: 0;
+}
+.role-options legend {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.65rem;
+}
+.role-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.55rem;
+  align-content: start;
+  border: 1px solid #819c99;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 0.8rem;
+}
+.role-card input[type='radio'] {
+  width: auto;
+  accent-color: #0f766e;
+  margin: 0;
+}
+.role-card strong,
+.role-card small {
+  grid-column: 1 / -1;
+}
+.role-card:hover {
+  border-color: #14b8a6;
+}
+.role-card:has(:checked) {
+  border-color: #14b8a6;
+  background: rgba(20, 184, 166, 0.12);
+}
+.role-card:focus-within,
+.password-input button:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+}
+.conversation-messages {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+.conversation-messages li {
+  padding: 0.75rem;
+  border: 1px solid #819c99;
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 90%;
+}
+.conversation-messages li.mine {
+  justify-self: end;
+  background: rgba(20, 184, 166, 0.12);
+}
+.conversation-messages p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0.35rem 0 0;
+}
+.conversation-compose {
+  display: grid;
+  gap: 0.5rem;
+}
+.conversation-compose button {
+  justify-self: end;
 }
 .auth-bottom {
   text-align: center;

@@ -26,6 +26,7 @@ public class SecurityConfig {
     .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
     .requestMatchers("/auth/admin/**","/admin/**").hasRole("ADMIN")
     .requestMatchers("/auth/login","/auth/register","/auth/health","/health").permitAll()
+    .requestMatchers(HttpMethod.POST,"/auth/register/verify","/auth/password/forgot","/auth/password/reset").permitAll()
     .requestMatchers(HttpMethod.POST,"/reports").hasAnyRole("STUDENT","EMPLOYER")
     .requestMatchers(HttpMethod.GET,"/jobs/employer/**","/jobs/*/applications").hasRole("EMPLOYER")
     .requestMatchers(HttpMethod.GET,"/jobs","/jobs/search","/jobs/*","/reviews/**","/employers/*/public","/employers/*/logo","/employers/*/cover").permitAll()

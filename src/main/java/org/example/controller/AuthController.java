@@ -20,11 +20,13 @@ import java.util.List;
 public class AuthController {
 
     private final UserService userService;
+    private final AccountEmailService accountEmailService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<RegisterResponse>> register(
+    public ResponseEntity<ApiResponse<Void>> register(
             @Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userService.register(request), "Đăng ký thành công"));
+        accountEmailService.requestRegistration(request);
+        return ResponseEntity.accepted().body(ApiResponse.success("Nếu thông tin đăng ký hợp lệ, bạn sẽ nhận được mã xác minh."));
     }
 
     @PostMapping("/login")

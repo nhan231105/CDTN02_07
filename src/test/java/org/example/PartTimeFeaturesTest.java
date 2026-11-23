@@ -18,13 +18,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
 class PartTimeFeaturesTest {
     @Autowired MockMvc mvc;@Autowired ObjectMapper json;
+    @Autowired org.example.service.UserService users;
 
     private record Account(long id,String token){}
     private String body(Object v)throws Exception{return json.writeValueAsString(v);}
     private Account account(String role)throws Exception{
         String key=UUID.randomUUID().toString().substring(0,8);
         var d=Map.of("fullName","Test User "+key,"email",key+"@test.local","phone","09"+String.format("%08d",Math.floorMod(UUID.randomUUID().hashCode(),100000000)),"password","GoodPass123!","role",role);
-        long id=json.readTree(mvc.perform(post("/auth/register").contentType("application/json").content(body(d))).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).at("/data/id").asLong();
+        long id=users.register(json.convertValue(d, org.example.service.RegisterRequest.class)).getId();
         String token=json.readTree(mvc.perform(post("/auth/login").contentType("application/json").content(body(Map.of("identifier",d.get("email"),"password","GoodPass123!")))).andReturn().getResponse().getContentAsString()).at("/data/accessToken").asText();
         return new Account(id,token);
     }

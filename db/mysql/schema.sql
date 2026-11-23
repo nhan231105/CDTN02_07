@@ -211,3 +211,27 @@ CREATE TABLE IF NOT EXISTS invitations (
   CONSTRAINT fk_invite_student FOREIGN KEY (student_id) REFERENCES users(id),
   CONSTRAINT fk_invite_job FOREIGN KEY (job_id) REFERENCES jobs(id)
 ) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS email_challenges (
+    id VARCHAR(170) NOT NULL PRIMARY KEY,
+    code_hash VARCHAR(60),
+    window_started_at DATETIME(6),
+    sent_at DATETIME(6),
+    sends INT NOT NULL,
+    attempts INT NOT NULL,
+    account_version VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS application_messages (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    application_id BIGINT NOT NULL,
+    sender_id BIGINT NOT NULL,
+    recipient_id BIGINT NOT NULL,
+    body VARCHAR(2000) NOT NULL,
+    sent_at DATETIME(6) NOT NULL,
+    read_at DATETIME(6),
+    INDEX idx_application_messages_history (application_id, id),
+    INDEX idx_application_messages_unread (application_id, recipient_id, read_at),
+    FOREIGN KEY (application_id) REFERENCES applications(id),
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (recipient_id) REFERENCES users(id)
+);

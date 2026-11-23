@@ -6,6 +6,8 @@ export function redirectAfterLogin(role, from) {
   if (!from || !from.startsWith('/') || from.startsWith('//'))
     return homeFor(role)
   if (from === '/notifications' || from.startsWith('/jobs')) return from
+  if (role !== 'ADMIN' && /^\/applications\/\d+\/messages$/.test(from))
+    return from
   const prefix =
     role === 'EMPLOYER'
       ? '/employer/'

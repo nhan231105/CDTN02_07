@@ -5,7 +5,7 @@ Base local: `http://localhost:8082/api`. Đây là bản đồng bộ implementa
 ## Xác thực và dữ liệu chung
 
 - JSON request/response, trừ file multipart và download nhị phân. API bảo vệ dùng `Authorization: Bearer <accessToken>`; subject là userID. Không gửi token qua query string.
-- `POST auth/register/login` giữ wrapper `{success,data,message,timestamp}`. API nghiệp vụ trả DTO trực tiếp; danh sách dùng Spring Page `{content,totalElements,totalPages,number,size,...}`.
+- API đăng nhập, đăng ký và đặt lại mật khẩu dùng wrapper `{success,data,message,timestamp}`. API nghiệp vụ trả DTO trực tiếp. Danh sách phân trang dùng Spring Page `{content,totalElements,totalPages,number,size,...}`.
 - `LoginResponse.data` gồm `id,fullName,email,phone,role,status,accessToken,tokenType,expiresAt`. Token một giờ, không refresh token; token sai/hết hạn→401, sai quyền→403.
 - Lỗi: `{code,message,timestamp,fieldErrors?}`.400 input,401 xác thực,403 quyền,404 không tồn tại,409 trùng/trạng thái,413 quá size,415 sai định dạng. Không trả stacktrace.
 - ID người thao tác lấy từ principal. Tham số ID của API legacy chỉ để tương thích; nếu gửi ID khác principal thì403.
@@ -14,7 +14,13 @@ Base local: `http://localhost:8082/api`. Đây là bản đồng bộ implementa
 
 | Method | Endpoint | Quyền | Request / response |
 |---|---|---|---|
-| POST | `/auth/register` | Public | `{fullName,email,phone,password,role}`; role STUDENT/EMPLOYER;201 wrapper user;400/409 |
+| POST | `/auth/register` | Public | `{fullName,email,phone,password,role}`. Sinh viên hoặc nhà tuyển dụng. Gửi hoặc gửi lại OTP và trả 202. |
+| POST | `/auth/register/verify` | Public | `{registration,code}`. Xác minh OTP rồi tạo user và profile, trả wrapper 201. |
+| POST | `/auth/password/forgot` | Public | `{email}`. Gửi hoặc gửi lại OTP và trả 202 với thông báo chung. |
+| POST | `/auth/password/reset` | Public | `{email,code,password}`. Dùng OTP một lần, thay mật khẩu và thu hồi JWT cũ, trả 200. |
+| GET | `/applications/{id}/messages?page=0` | Hai bên của đơn được duyệt | Trả thông tin hội thoại, lịch sử mới nhất, số tin chưa đọc và cờ lịch sử cũ hơn. |
+| POST | `/applications/{id}/messages` | Hai bên của đơn được duyệt | `{body}` từ 1 đến 2.000 ký tự sau khi bỏ khoảng trắng đầu cuối. Trả 201. |
+| PATCH | `/applications/{id}/messages/read` | Hai bên của đơn được duyệt | `{through}` là ID tin nhắn cuối đã thấy. Đánh dấu tin của người nhận trong đơn, trả 204. |
 | POST | `/auth/login` | Public | `{identifier,password}`; identifier=email hoặc SĐT;200 wrapper login;401/403 |
 | GET | `/auth/health` | Public |200 trạng thái dịch vụ |
 | GET | `/me/profile` | Auth |200 DTO phẳng account+profile theo role |

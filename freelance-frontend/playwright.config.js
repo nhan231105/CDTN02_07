@@ -11,8 +11,9 @@ export default defineConfig({
     ['json', { outputFile: 'test-results/e2e-results.json' }],
   ],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
-    channel: 'msedge',
+    baseURL: process.env.CAMPUSWORK_E2E_FRONTEND || 'http://127.0.0.1:5173',
+    channel: process.env.CAMPUSWORK_E2E_BROWSER || 'msedge',
+    actionTimeout: 10000,
     headless: true,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

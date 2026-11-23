@@ -11,6 +11,8 @@ import Layout from './components/Layout'
 import { Empty, Loading } from './components/UI'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import Conversation from './pages/Conversation'
 import Jobs from './pages/Jobs'
 import Landing from './pages/Landing'
 import EmployerPublic from './pages/EmployerPublic'
@@ -63,6 +65,10 @@ export function AppRoutes() {
         <Route path="employers/:id" element={<EmployerPublic />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route element={<RequireAuth roles={['STUDENT', 'EMPLOYER']} />}>
+          <Route path="applications/:id/messages" element={<Conversation />} />
+        </Route>
         <Route element={<RequireAuth />}>
           <Route path="notifications" element={<Notifications />} />
         </Route>
