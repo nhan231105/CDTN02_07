@@ -102,6 +102,32 @@ class SecurityProfileIntegrationTest {
         var d=data("STUDENT");register(d);
         mvc.perform(post("/auth/register").contentType("application/json").content(body(d))).andExpect(status().isTooManyRequests());
     }
+    @Test void registrationHidesDuplicateEmailOrPhoneWithoutCallingProvider() throws Exception {
+        var existing = data("STUDENT");
+        register(existing);
+        org.mockito.Mockito.clearInvocations(mail);
+
+        var challenge = challenges.findById("register:" + existing.get("email")).orElseThrow();
+        challenge.setSentAt(Instant.now().minusSeconds(61));
+        challenges.saveAndFlush(challenge);
+
+        var duplicateEmail = new HashMap<>(data("EMPLOYER"));
+        duplicateEmail.put("email", existing.get("email").toUpperCase(Locale.ROOT));
+        var duplicatePhone = new HashMap<>(data("EMPLOYER"));
+        duplicatePhone.put("phone", existing.get("phone"));
+        for (var registration : List.of(duplicateEmail, duplicatePhone)) {
+            mvc.perform(post("/auth/register").contentType("application/json").content(body(registration)))
+                    .andExpect(status().isAccepted()).andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Nếu thông tin đăng ký hợp lệ, bạn sẽ nhận được mã xác minh."));
+        }
+        org.mockito.Mockito.verify(mail, org.mockito.Mockito.never()).send(
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString());
+
+        var fresh = data("EMPLOYER");
+        assertTrue(requestCode("/auth/register", fresh, fresh.get("email")).matches("[0-9]{6}"));
+    }
+
     @Test void otpExpiresAndResendObsoletesPreviousCode() throws Exception {
         var d = data("STUDENT");
         String email = d.get("email");

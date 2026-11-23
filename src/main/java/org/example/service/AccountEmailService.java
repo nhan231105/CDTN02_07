@@ -1,6 +1,7 @@
 package org.example.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.common.DomainException;
 import org.example.entity.*;
 import org.example.repository.*;
@@ -14,6 +15,7 @@ import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AccountEmailService {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int OTP_SECONDS = 300;
@@ -33,8 +35,14 @@ public class AccountEmailService {
         validateRegistration(request);
         mail.ensureConfigured();
         String email = normalize(request.getEmail());
-        boolean available = !users.existsByEmail(email) && !users.existsByPhone(request.getPhone());
-        issue("register", email, available ? "" : null);
+        boolean emailTaken = users.existsByEmail(email);
+        boolean phoneTaken = !emailTaken && users.existsByPhone(request.getPhone());
+        issue("register", email, emailTaken || phoneTaken ? null : "");
+        if (emailTaken || phoneTaken) {
+            log.info("Registration OTP suppressed reason={}", emailTaken ? "EMAIL_IN_USE" : "PHONE_IN_USE");
+        } else {
+            log.info("Registration OTP accepted by email provider");
+        }
     }
 
     @Transactional(noRollbackFor = InvalidCode.class)

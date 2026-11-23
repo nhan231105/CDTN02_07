@@ -1,6 +1,7 @@
 package org.example.service;
 
 import org.example.common.DomainException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
+@Slf4j
 public class CampusEmail {
     private final RestClient client;
     private final String key;
@@ -40,7 +42,11 @@ public class CampusEmail {
     }
 
     public void ensureConfigured() {
-        if (key.isBlank() || sender.isEmpty()) throw new DeliveryException();
+        if (key.isBlank() || sender.isEmpty()) {
+            log.warn("CampusWork email configuration invalid apiKeyPresent={} senderValid={}",
+                    !key.isBlank(), !sender.isEmpty());
+            throw new DeliveryException();
+        }
     }
 
     public void send(String email, String subject, String code) {
@@ -61,10 +67,11 @@ public class CampusEmail {
             var accepted = response.getBody();
             if (response.getStatusCode().value() != 201 || accepted == null
                     || accepted.messageId() == null || accepted.messageId().isBlank()) {
+                log.warn("CampusWork email provider did not acknowledge delivery request HTTP {}",
+                        response.getStatusCode().value());
                 throw new DeliveryException();
             }
         } catch (RestClientException ex) {
-            var log = org.slf4j.LoggerFactory.getLogger(CampusEmail.class);
             if (ex instanceof RestClientResponseException response) {
                 log.warn("CampusWork email provider returned HTTP {}", response.getStatusCode().value());
             } else {
