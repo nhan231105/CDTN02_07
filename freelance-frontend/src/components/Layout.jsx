@@ -123,6 +123,10 @@ export default function Layout() {
           </div>
         </div>
       </header>
+      <aside className="project-data-notice" aria-label="Thông báo về dữ liệu">
+        <strong>Website đồ án.</strong> Dữ liệu tuyển dụng chỉ dùng để minh họa.
+        Các vị trí trên trang không phải tin tuyển dụng thật.
+      </aside>
       <main id="main">
         <Outlet />
       </main>
