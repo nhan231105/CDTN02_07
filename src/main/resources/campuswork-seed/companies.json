@@ -1,0 +1,607 @@
+[
+  {
+    "key": "cw01",
+    "fullName": "Điều phối demo Mây Sớm",
+    "orgName": "Cà phê Mây Sớm",
+    "industry": "Ăn uống",
+    "location": "Quận 3, TP. Hồ Chí Minh",
+    "description": "Quầy cà phê nhỏ phục vụ khách quen vào buổi sáng và sau giờ học.",
+    "benefits": "Đồ uống trong ca",
+    "jobs": [
+      {
+        "title": "Nhân viên pha chế ca tối",
+        "salary": 35000,
+        "shift": "EVENING",
+        "hours": 12,
+        "schedule": "18:00–22:00 thứ Hai, Tư và Sáu",
+        "description": "Chuẩn bị cà phê, cân nguyên liệu và chốt danh sách đồ uống cuối ca.",
+        "requirements": "Phân biệt được đơn có yêu cầu thay sữa hoặc giảm đường.",
+        "benefits": "Có buổi thực hành máy pha và một đồ uống mỗi ca.",
+        "deadlineDays": 34
+      },
+      {
+        "title": "Phục vụ bàn sáng cuối tuần",
+        "salary": 32000,
+        "shift": "WEEKEND",
+        "hours": 10,
+        "schedule": "07:00–12:00 thứ Bảy và Chủ nhật",
+        "description": "Nhận món tại quầy, chuyển đúng bàn và sắp khu vực ngồi trước giờ mở cửa.",
+        "requirements": "Có thể đứng và di chuyển trong ca; giao tiếp lịch sự.",
+        "benefits": "Có bữa nhẹ giữa ca và lịch cố định hai buổi.",
+        "deadlineDays": 39
+      },
+      {
+        "title": "Phụ trách quầy bánh buổi chiều",
+        "salary": 33000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "13:00–17:00 thứ Ba, Năm và Bảy",
+        "description": "Ghi tên bánh trên biển quầy, soạn phần mang đi và kiểm tra hạn bảo quản.",
+        "requirements": "Đọc kỹ nhãn nguyên liệu để trả lời các câu hỏi về dị ứng.",
+        "benefits": "Học cách sắp bánh theo thứ tự xuất quầy.",
+        "deadlineDays": 44
+      }
+    ]
+  },
+  {
+    "key": "cw02",
+    "fullName": "Điều phối demo Hẻm Xanh",
+    "orgName": "Bếp Nhỏ Hẻm Xanh",
+    "industry": "Ăn uống",
+    "location": "Bình Thạnh, TP. Hồ Chí Minh",
+    "description": "Bếp thực hành các món cơm hộp và điều phối đơn theo khung giờ.",
+    "benefits": "Suất ăn trong ca",
+    "jobs": [
+      {
+        "title": "Phụ bếp món cơm trưa",
+        "salary": 39000,
+        "shift": "MORNING",
+        "hours": 15,
+        "schedule": "08:00–11:45 từ thứ Hai đến thứ Năm",
+        "description": "Rửa và chia rau củ, chuẩn bị hộp sốt để bếp chính hoàn thành mẻ cơm trưa.",
+        "requirements": "Dùng được cân bếp và giữ khu sơ chế gọn gàng.",
+        "benefits": "Có suất ăn trưa và tạp dề tại chỗ.",
+        "deadlineDays": 41
+      },
+      {
+        "title": "Soạn đơn cơm mang đi",
+        "salary": 33500,
+        "shift": "AFTERNOON",
+        "hours": 10,
+        "schedule": "11:00–13:00 từ thứ Hai đến thứ Sáu",
+        "description": "So khớp phiếu với món, kiểm sốt đi kèm và xếp túi theo giờ bàn giao.",
+        "requirements": "Đọc số đơn cẩn thận trong khung giờ đông.",
+        "benefits": "Có khay thao tác riêng và bảng kiểm từ đầu ca.",
+        "deadlineDays": 46
+      },
+      {
+        "title": "Chuẩn bị nguyên liệu bữa tối",
+        "salary": 37000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "14:00–18:00 thứ Hai, Tư và Sáu",
+        "description": "Cân từng phần thịt, dán nhãn khay và ghi lượng thực phẩm còn lại.",
+        "requirements": "Tuân thủ quy trình tách dụng cụ sống và chín.",
+        "benefits": "Được hướng dẫn vệ sinh an toàn thực phẩm thực hành.",
+        "deadlineDays": 51
+      }
+    ]
+  },
+  {
+    "key": "cw03",
+    "fullName": "Điều phối demo Trang Mở",
+    "orgName": "Hiệu sách Trang Mở",
+    "industry": "Bán lẻ sách",
+    "location": "Phú Nhuận, TP. Hồ Chí Minh",
+    "description": "Không gian đọc và trao đổi sách, có khu dành cho sách thiếu nhi.",
+    "benefits": "Mượn sách theo tuần",
+    "jobs": [
+      {
+        "title": "Sắp xếp kệ sách thiếu nhi",
+        "salary": 32000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "15:00–19:00 thứ Hai, Tư và Sáu",
+        "description": "Phân sách theo nhóm tuổi, đối chiếu mã gáy và bổ sung biển tên cho kệ.",
+        "requirements": "Đọc được nhãn phân loại và chịu khó làm việc tỉ mỉ.",
+        "benefits": "Có thể mượn một cuốn sách mỗi tuần.",
+        "deadlineDays": 48
+      },
+      {
+        "title": "Hỗ trợ quầy đổi sách",
+        "salary": 35000,
+        "shift": "WEEKEND",
+        "hours": 10,
+        "schedule": "09:00–14:00 thứ Bảy và Chủ nhật",
+        "description": "Kiểm tình trạng sách khách mang đến và hướng dẫn cách ghi phiếu đổi.",
+        "requirements": "Diễn đạt rõ quy định và đánh dấu sách cần kiểm tra thêm.",
+        "benefits": "Có ca làm theo cặp và tài liệu tham khảo tại quầy.",
+        "deadlineDays": 53
+      },
+      {
+        "title": "Chuẩn bị buổi đọc truyện",
+        "salary": 38000,
+        "shift": "WEEKEND",
+        "hours": 6,
+        "schedule": "08:30–11:30 thứ Bảy và Chủ nhật",
+        "description": "Chọn sách theo chủ đề buổi đọc, kê chỗ ngồi và phát thẻ tên cho các nhóm.",
+        "requirements": "Thoải mái trao đổi với phụ huynh và trẻ nhỏ.",
+        "benefits": "Được dự phần đọc do người hướng dẫn phụ trách.",
+        "deadlineDays": 35
+      }
+    ]
+  },
+  {
+    "key": "cw04",
+    "fullName": "Điều phối demo Nét Nâu",
+    "orgName": "Xưởng Nét Nâu",
+    "industry": "Thiết kế",
+    "location": "Quận 10, TP. Hồ Chí Minh",
+    "description": "Xưởng làm ấn phẩm và bộ nhận diện cho các dự án thực hành.",
+    "benefits": "Góp ý hồ sơ năng lực",
+    "jobs": [
+      {
+        "title": "Trợ lý dàn trang tờ gấp",
+        "salary": 52000,
+        "shift": "FLEXIBLE",
+        "hours": 12,
+        "schedule": "Ba buổi 4 giờ, chốt lịch trước mỗi tuần",
+        "description": "Đặt khối chữ vào lưới có sẵn và kiểm tra độ tràn lề trước khi xuất bản nháp.",
+        "requirements": "Biết thao tác cơ bản trên Figma hoặc phần mềm dàn trang.",
+        "benefits": "Có người nhận xét từng bản sửa.",
+        "deadlineDays": 55
+      },
+      {
+        "title": "Chỉnh màu ảnh sản phẩm",
+        "salary": 49000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "13:30–17:30 thứ Ba, Năm và Sáu",
+        "description": "Cân sáng, cắt khung và đặt tên ảnh theo mã mẫu trước khi giao cho thiết kế.",
+        "requirements": "Nhận ra ảnh bị lệch màu và biết xử lý bằng công cụ chỉnh ảnh.",
+        "benefits": "Được xem bộ tiêu chí so sánh ảnh trước và sau chỉnh.",
+        "deadlineDays": 37
+      },
+      {
+        "title": "Soát lỗi ấn phẩm trước in",
+        "salary": 45000,
+        "shift": "MORNING",
+        "hours": 9,
+        "schedule": "09:00–12:00 thứ Hai, Tư và Sáu",
+        "description": "Đọc đối chiếu nội dung, đánh dấu lỗi dấu câu và kiểm tra kích cỡ bản in thử.",
+        "requirements": "Đọc tiếng Việt kỹ và ghi chú lỗi theo số trang.",
+        "benefits": "Có bản in thử cùng hướng dẫn kiểm tra màu.",
+        "deadlineDays": 42
+      }
+    ]
+  },
+  {
+    "key": "cw05",
+    "fullName": "Điều phối demo Nắng Mai",
+    "orgName": "Nhà hoa Nắng Mai",
+    "industry": "Bán lẻ hoa",
+    "location": "Tân Bình, TP. Hồ Chí Minh",
+    "description": "Quầy hoa theo mùa, có khu chuẩn bị bó hoa và thiệp đặt trước.",
+    "benefits": "Học kỹ thuật gói hoa",
+    "jobs": [
+      {
+        "title": "Gói bó hoa đặt trước",
+        "salary": 38000,
+        "shift": "MORNING",
+        "hours": 12,
+        "schedule": "07:30–11:30 thứ Ba, Năm và Bảy",
+        "description": "Chọn giấy theo mẫu, giữ bó cân tay và đặt đúng thiệp vào từng đơn.",
+        "requirements": "Phân biệt màu giấy và thao tác nhẹ tay với hoa tươi.",
+        "benefits": "Học hai kiểu gói hoa trong tuần đầu.",
+        "deadlineDays": 39
+      },
+      {
+        "title": "Chuẩn bị hoa và bình trưng bày",
+        "salary": 34000,
+        "shift": "AFTERNOON",
+        "hours": 10,
+        "schedule": "14:00–16:30 từ thứ Ba đến thứ Sáu",
+        "description": "Cắt gốc, thay nước bình và tách cành không đạt khỏi khu trưng bày.",
+        "requirements": "Làm việc được với kéo cắt cành sau khi được hướng dẫn.",
+        "benefits": "Có găng tay và dụng cụ riêng trong ca.",
+        "deadlineDays": 44
+      },
+      {
+        "title": "Ghi thiệp và kiểm đơn hoa",
+        "salary": 35000,
+        "shift": "WEEKEND",
+        "hours": 8,
+        "schedule": "08:00–12:00 thứ Bảy và Chủ nhật",
+        "description": "Kiểm chính tả lời nhắn, chọn thiệp đúng dịp và đối chiếu giờ nhận hoa.",
+        "requirements": "Viết chữ rõ hoặc dùng được mẫu thiệp in tại quầy.",
+        "benefits": "Có sổ mẫu để luyện trình bày thiệp.",
+        "deadlineDays": 49
+      }
+    ]
+  },
+  {
+    "key": "cw06",
+    "fullName": "Điều phối demo Cầu Giấy Nhỏ",
+    "orgName": "Lớp học Cầu Giấy Nhỏ",
+    "industry": "Giáo dục",
+    "location": "Gò Vấp, TP. Hồ Chí Minh",
+    "description": "Lớp kỹ năng quy mô nhỏ với hoạt động học nhóm và trò chơi kiến thức.",
+    "benefits": "Mượn học liệu nội bộ",
+    "jobs": [
+      {
+        "title": "Trợ giảng nhóm kỹ năng đọc",
+        "salary": 60000,
+        "shift": "AFTERNOON",
+        "hours": 9,
+        "schedule": "15:00–18:00 thứ Ba, Năm và Bảy",
+        "description": "Theo dõi nhóm đọc ngắn, ghi câu hỏi học viên gặp khó và trao đổi với giáo viên.",
+        "requirements": "Trình bày rõ ràng và kiên nhẫn khi hướng dẫn từng bước.",
+        "benefits": "Được nhận giáo án trước và góp ý sau buổi học.",
+        "deadlineDays": 46
+      },
+      {
+        "title": "Soạn bộ thẻ học liệu",
+        "salary": 45000,
+        "shift": "FLEXIBLE",
+        "hours": 10,
+        "schedule": "Hai buổi 5 giờ trong tuần, đăng ký trước",
+        "description": "Kiểm tra câu hỏi, in thẻ và phân bộ theo chủ đề để lớp lấy nhanh.",
+        "requirements": "Biết dùng tài liệu văn bản và kiểm dấu tiếng Việt.",
+        "benefits": "Có thư viện mẫu học liệu để tham khảo.",
+        "deadlineDays": 51
+      },
+      {
+        "title": "Hỗ trợ chuẩn bị phòng học",
+        "salary": 36000,
+        "shift": "EVENING",
+        "hours": 8,
+        "schedule": "17:00–19:00 thứ Hai đến thứ Năm",
+        "description": "Sắp xếp bàn nhóm, thử máy chiếu và tổng hợp dụng cụ sau giờ học.",
+        "requirements": "Biết kiểm tra kết nối màn hình hoặc sẵn sàng học.",
+        "benefits": "Được dùng tài liệu hoạt động sau khi kết thúc ca.",
+        "deadlineDays": 56
+      }
+    ]
+  },
+  {
+    "key": "cw07",
+    "fullName": "Điều phối demo Hạt Bơ",
+    "orgName": "Tiệm bánh Hạt Bơ",
+    "industry": "Làm bánh",
+    "location": "Quận 7, TP. Hồ Chí Minh",
+    "description": "Bếp bánh chia mẻ nhỏ và vận hành quầy nhận bánh theo lịch.",
+    "benefits": "Bánh thử theo mẻ",
+    "jobs": [
+      {
+        "title": "Phụ cân nguyên liệu làm bánh",
+        "salary": 40000,
+        "shift": "MORNING",
+        "hours": 12,
+        "schedule": "06:30–10:30 thứ Ba, Năm và Bảy",
+        "description": "Cân bột và bơ theo phiếu mẻ, chuẩn bị khuôn và ghi thời điểm bàn giao.",
+        "requirements": "Đọc đơn vị gram chính xác và làm đúng thứ tự mẻ.",
+        "benefits": "Có hướng dẫn căn bản về bột và nhiệt độ.",
+        "deadlineDays": 53
+      },
+      {
+        "title": "Đóng hộp bánh đặt trước",
+        "salary": 34000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "14:00–18:00 thứ Hai, Tư và Sáu",
+        "description": "Kiểm số miếng bánh, đặt miếng lót và gắn nhãn bảo quản cho từng hộp.",
+        "requirements": "Chú ý đến mặt bánh và tránh để hộp quá sát nhau.",
+        "benefits": "Có bánh thử từ mẻ được chọn trong ca.",
+        "deadlineDays": 35
+      },
+      {
+        "title": "Trực quầy bánh sáng",
+        "salary": 36000,
+        "shift": "WEEKEND",
+        "hours": 8,
+        "schedule": "07:00–11:00 thứ Bảy và Chủ nhật",
+        "description": "Giới thiệu vị bánh trong ngày, chuẩn bị túi và ghi phiếu cho đơn lấy sau.",
+        "requirements": "Có thể học mô tả thành phần cơ bản của từng loại bánh.",
+        "benefits": "Được hướng dẫn cách trưng bày quầy theo mẻ.",
+        "deadlineDays": 40
+      }
+    ]
+  },
+  {
+    "key": "cw08",
+    "fullName": "Điều phối demo Khoảnh Khắc Nhỏ",
+    "orgName": "Phòng ảnh Khoảnh Khắc Nhỏ",
+    "industry": "Nhiếp ảnh",
+    "location": "Quận 4, TP. Hồ Chí Minh",
+    "description": "Phòng ảnh mô phỏng các buổi chụp sản phẩm và chân dung.",
+    "benefits": "Hướng dẫn dùng đèn chụp",
+    "jobs": [
+      {
+        "title": "Trợ lý buổi chụp sản phẩm",
+        "salary": 50000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "13:00–17:00 thứ Ba, Năm và Bảy",
+        "description": "Dựng phông, đặt vật mẫu theo bảng bố cục và kiểm phụ kiện sau buổi chụp.",
+        "requirements": "Cẩn thận với chân đèn và biết làm việc theo tín hiệu của nhiếp ảnh gia.",
+        "benefits": "Được hướng dẫn bố trí ánh sáng một đèn.",
+        "deadlineDays": 37
+      },
+      {
+        "title": "Phân loại ảnh sau buổi chụp",
+        "salary": 43000,
+        "shift": "FLEXIBLE",
+        "hours": 10,
+        "schedule": "Hai buổi 5 giờ theo lịch bàn giao ảnh",
+        "description": "Lọc ảnh nhòe, đánh dấu góc chụp đạt và đặt thư mục theo lô sản phẩm.",
+        "requirements": "Biết đọc tên tệp và nhận ra ảnh bị mất nét rõ ràng.",
+        "benefits": "Có bộ ảnh mẫu để luyện chấm theo tiêu chí.",
+        "deadlineDays": 42
+      },
+      {
+        "title": "Chuẩn bị đạo cụ chụp ảnh",
+        "salary": 42000,
+        "shift": "MORNING",
+        "hours": 9,
+        "schedule": "09:00–12:00 thứ Hai, Tư và Sáu",
+        "description": "Lau bề mặt đạo cụ, phân màu nền và ghi các món cần trả sau buổi chụp.",
+        "requirements": "Có thể kiểm đếm vật nhỏ và ghi nhanh vị trí đã cất.",
+        "benefits": "Được học cách chọn đạo cụ theo tông ảnh.",
+        "deadlineDays": 47
+      }
+    ]
+  },
+  {
+    "key": "cw09",
+    "fullName": "Điều phối demo Giấy Mộc",
+    "orgName": "Cửa hàng Giấy Mộc",
+    "industry": "Văn phòng phẩm",
+    "location": "Quận 11, TP. Hồ Chí Minh",
+    "description": "Cửa hàng sổ tay và giấy thủ công có góc trưng bày theo chủ đề.",
+    "benefits": "Được hướng dẫn về chất liệu giấy",
+    "jobs": [
+      {
+        "title": "Tư vấn sổ tay và giấy vẽ",
+        "salary": 35000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "14:00–18:00 thứ Hai, Tư và Sáu",
+        "description": "Giới thiệu cỡ sổ, giúp khách so bề mặt giấy và bổ sung mẫu thử tại quầy.",
+        "requirements": "Sẵn sàng tìm hiểu định lượng và độ nhám của giấy.",
+        "benefits": "Có bộ mẫu giấy dùng riêng trong ca.",
+        "deadlineDays": 44
+      },
+      {
+        "title": "Kiểm kê bút và vật dụng",
+        "salary": 34000,
+        "shift": "EVENING",
+        "hours": 9,
+        "schedule": "17:00–20:00 thứ Ba, Năm và Bảy",
+        "description": "Đếm từng nhóm bút, ghi sai lệch và dán lại nhãn khay khi cần.",
+        "requirements": "Nhập được số liệu cơ bản và biết kiểm đếm lại.",
+        "benefits": "Có khu vực bàn riêng để kiểm theo khay.",
+        "deadlineDays": 49
+      },
+      {
+        "title": "Bày quầy theo chủ đề tuần",
+        "salary": 37000,
+        "shift": "WEEKEND",
+        "hours": 8,
+        "schedule": "08:00–12:00 thứ Bảy và Chủ nhật",
+        "description": "Thay biển giá, sắp đồ theo bảng màu và chụp ảnh đối chiếu cuối ca.",
+        "requirements": "Có mắt sắp xếp và biết dùng thước để canh hàng.",
+        "benefits": "Được thử một bố cục dưới sự hướng dẫn của quản lý.",
+        "deadlineDays": 54
+      }
+    ]
+  },
+  {
+    "key": "cw10",
+    "fullName": "Điều phối demo Đốm Đèn",
+    "orgName": "Nhóm Sự kiện Đốm Đèn",
+    "industry": "Sự kiện",
+    "location": "Quận 5, TP. Hồ Chí Minh",
+    "description": "Nhóm vận hành hội chợ sinh viên và buổi nói chuyện quy mô nhỏ.",
+    "benefits": "Bữa nhẹ trong buổi sự kiện",
+    "jobs": [
+      {
+        "title": "Lễ tân buổi tọa đàm",
+        "salary": 47000,
+        "shift": "WEEKEND",
+        "hours": 10,
+        "schedule": "08:00–13:00 thứ Bảy và Chủ nhật",
+        "description": "Đối chiếu tên khách, đưa thẻ vào cửa và chỉ dẫn chỗ ngồi theo sơ đồ.",
+        "requirements": "Giao tiếp rõ và giữ bình tĩnh khi nhiều người vào cùng lúc.",
+        "benefits": "Có ca tập dượt sơ đồ và bữa nhẹ.",
+        "deadlineDays": 51
+      },
+      {
+        "title": "Phụ lắp đặt gian hàng",
+        "salary": 44000,
+        "shift": "MORNING",
+        "hours": 12,
+        "schedule": "07:00–11:00 thứ Tư, Sáu và Bảy",
+        "description": "Đặt bảng tên gian, kiểm dây buộc và bàn giao dụng cụ theo khu vực.",
+        "requirements": "Thu gom dụng cụ sau khi xong và báo ngay đồ dùng bị hỏng.",
+        "benefits": "Có hướng dẫn lắp kệ nhẹ và người phụ trách tại chỗ.",
+        "deadlineDays": 56
+      },
+      {
+        "title": "Điều phối khách qua khu trải nghiệm",
+        "salary": 48000,
+        "shift": "AFTERNOON",
+        "hours": 10,
+        "schedule": "13:00–18:00 thứ Bảy và Chủ nhật",
+        "description": "Đếm số người mỗi lượt, hướng dẫn xếp hàng và chuyển thông tin khi lịch đổi.",
+        "requirements": "Có khả năng nói ngắn gọn và đọc sơ đồ sự kiện.",
+        "benefits": "Có bộ đàm dùng trong ca và nghỉ luân phiên.",
+        "deadlineDays": 38
+      }
+    ]
+  },
+  {
+    "key": "cw11",
+    "fullName": "Điều phối demo Gốm Ven Sông",
+    "orgName": "Gốm Ven Sông",
+    "industry": "Thủ công",
+    "location": "Quận 8, TP. Hồ Chí Minh",
+    "description": "Xưởng thực hành tạo hình gốm có lớp cuối tuần cho người mới.",
+    "benefits": "Thử làm một sản phẩm nhỏ",
+    "jobs": [
+      {
+        "title": "Hỗ trợ lớp nặn gốm cuối tuần",
+        "salary": 46000,
+        "shift": "WEEKEND",
+        "hours": 10,
+        "schedule": "08:30–13:30 thứ Bảy và Chủ nhật",
+        "description": "Chia đất theo bàn, hỗ trợ học viên dùng dụng cụ và dán tên lên khay sản phẩm.",
+        "requirements": "Khéo tay, có thể làm mẫu động tác đơn giản sau buổi hướng dẫn.",
+        "benefits": "Được thực hành một sản phẩm mẫu.",
+        "deadlineDays": 35
+      },
+      {
+        "title": "Chuẩn bị đất và dụng cụ xưởng",
+        "salary": 37000,
+        "shift": "MORNING",
+        "hours": 9,
+        "schedule": "08:00–11:00 thứ Hai, Tư và Sáu",
+        "description": "Cân phần đất, kiểm que tạo hình và chuyển khay theo lô lớp học.",
+        "requirements": "Biết giữ mặt bàn khô và sắp dụng cụ đúng vị trí.",
+        "benefits": "Có tạp dề và thời gian làm quen với nguyên liệu.",
+        "deadlineDays": 40
+      }
+    ]
+  },
+  {
+    "key": "cw12",
+    "fullName": "Điều phối demo Hạt Mầm",
+    "orgName": "Vườn Rau Hạt Mầm",
+    "industry": "Nông sản",
+    "location": "Bình Tân, TP. Hồ Chí Minh",
+    "description": "Điểm soạn giỏ rau theo mùa với khu phân loại riêng.",
+    "benefits": "Hướng dẫn phân loại rau củ",
+    "jobs": [
+      {
+        "title": "Phân loại rau theo giỏ",
+        "salary": 34000,
+        "shift": "MORNING",
+        "hours": 12,
+        "schedule": "06:00–10:00 thứ Ba, Năm và Bảy",
+        "description": "Kiểm rau dập, chia theo lượng đặt và giữ các nhóm rau riêng trong khay.",
+        "requirements": "Dùng cân chính xác và nhớ quy tắc kiểm rau tại bàn.",
+        "benefits": "Được học cách phân biệt rau theo mùa.",
+        "deadlineDays": 42
+      },
+      {
+        "title": "Soạn giỏ nông sản đặt trước",
+        "salary": 36000,
+        "shift": "AFTERNOON",
+        "hours": 10,
+        "schedule": "14:00–16:30 thứ Hai đến thứ Năm",
+        "description": "Đối chiếu danh sách rau củ, lót giỏ và gắn thẻ theo giờ khách lấy.",
+        "requirements": "Có thể kiểm đủ loại trước khi mang giỏ ra quầy.",
+        "benefits": "Có bảng hướng dẫn xếp đồ để tránh dập.",
+        "deadlineDays": 47
+      }
+    ]
+  },
+  {
+    "key": "cw13",
+    "fullName": "Điều phối demo Từ Hạt Mực",
+    "orgName": "Đội nội dung Từ Hạt Mực",
+    "industry": "Truyền thông",
+    "location": "Quận 1, TP. Hồ Chí Minh",
+    "description": "Nhóm thực hành biên tập nội dung giáo dục và video ngắn.",
+    "benefits": "Nhận phản hồi từ biên tập viên",
+    "jobs": [
+      {
+        "title": "Biên tập nội dung giáo dục",
+        "salary": 56000,
+        "shift": "FLEXIBLE",
+        "hours": 12,
+        "schedule": "Ba buổi 4 giờ, họp kế hoạch vào thứ Hai",
+        "description": "Rút gọn bài giải thích, soát thuật ngữ và ghi câu cần tác giả kiểm tra lại.",
+        "requirements": "Viết tiếng Việt mạch lạc và chấp nhận góp ý theo bản sửa.",
+        "benefits": "Có quy chuẩn biên tập và phản hồi định kỳ.",
+        "deadlineDays": 49
+      },
+      {
+        "title": "Nhập phụ đề video ngắn",
+        "salary": 47000,
+        "shift": "EVENING",
+        "hours": 10,
+        "schedule": "18:00–20:30 thứ Hai đến thứ Năm",
+        "description": "Chép lời thoại, căn điểm xuất hiện và kiểm tốc độ đọc trên đoạn thử.",
+        "requirements": "Nghe rõ giọng Việt và đánh dấu chỗ không chắc thay vì đoán.",
+        "benefits": "Được hướng dẫn bộ phím tắt và cách kiểm phụ đề.",
+        "deadlineDays": 54
+      }
+    ]
+  },
+  {
+    "key": "cw14",
+    "fullName": "Điều phối demo Bàn Chung",
+    "orgName": "Không gian học Bàn Chung",
+    "industry": "Dịch vụ",
+    "location": "Quận 6, TP. Hồ Chí Minh",
+    "description": "Không gian tự học có phòng nhóm, bàn yên tĩnh và quầy thông tin.",
+    "benefits": "Dùng chỗ học ngoài giờ làm",
+    "jobs": [
+      {
+        "title": "Trực quầy không gian học",
+        "salary": 38000,
+        "shift": "EVENING",
+        "hours": 12,
+        "schedule": "17:00–21:00 thứ Hai, Tư và Sáu",
+        "description": "Ghi lượt vào, hướng dẫn chỗ ngồi và nhắc quy tắc dùng khu yên tĩnh.",
+        "requirements": "Giải thích ngắn gọn cho người mới và xử lý đặt chỗ cơ bản.",
+        "benefits": "Được dùng bàn học ngoài ca theo lịch còn chỗ.",
+        "deadlineDays": 56
+      },
+      {
+        "title": "Chuẩn bị phòng học nhóm",
+        "salary": 35000,
+        "shift": "WEEKEND",
+        "hours": 8,
+        "schedule": "08:00–12:00 thứ Bảy và Chủ nhật",
+        "description": "Kiểm bút bảng, bố trí ổ cắm và trả bàn ghế về sơ đồ sau mỗi phiên.",
+        "requirements": "Biết ghi lại thiết bị thiếu để ca sau chuẩn bị.",
+        "benefits": "Có checklist từng phòng, nghỉ đổi ca linh hoạt.",
+        "deadlineDays": 38
+      }
+    ]
+  },
+  {
+    "key": "cw15",
+    "fullName": "Điều phối demo Chuyển Tay",
+    "orgName": "Kho Nhỏ Chuyển Tay",
+    "industry": "Vận hành kho",
+    "location": "Tân Phú, TP. Hồ Chí Minh",
+    "description": "Kho thực hành đóng gói hàng nhẹ và đối chiếu số lượng theo ca.",
+    "benefits": "Trang bị dụng cụ đóng gói",
+    "jobs": [
+      {
+        "title": "Đóng gói hàng nhẹ",
+        "salary": 38000,
+        "shift": "AFTERNOON",
+        "hours": 12,
+        "schedule": "13:00–17:00 thứ Hai, Tư và Sáu",
+        "description": "Chọn thùng vừa cỡ, chèn chống va đập và dán nhãn theo phiếu mẫu.",
+        "requirements": "Cẩn thận khi dùng dụng cụ đóng gói và đọc mã ngắn.",
+        "benefits": "Có bàn thao tác riêng và vật tư tại chỗ.",
+        "deadlineDays": 40
+      },
+      {
+        "title": "Đối chiếu tồn kho cuối buổi",
+        "salary": 42000,
+        "shift": "EVENING",
+        "hours": 9,
+        "schedule": "17:00–20:00 thứ Ba, Năm và Bảy",
+        "description": "Đếm ô kệ theo tuyến, nhập số lượng và báo chênh lệch với bảng theo dõi.",
+        "requirements": "Vững phép tính cơ bản và có thể kiểm lại số liệu theo ô.",
+        "benefits": "Được hướng dẫn dùng bảng tồn và sơ đồ kệ.",
+        "deadlineDays": 45
+      }
+    ]
+  }
+]

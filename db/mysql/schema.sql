@@ -71,6 +71,12 @@ CREATE TABLE IF NOT EXISTS stored_files (
   CONSTRAINT ck_file_size CHECK (size >= 0)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS stored_image_bytes (
+  file_ref VARCHAR(36) NOT NULL PRIMARY KEY,
+  image_bytes MEDIUMBLOB NOT NULL,
+  CONSTRAINT fk_stored_image_file FOREIGN KEY (file_ref) REFERENCES stored_files(ref) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS jobs (
   id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   employer_id BIGINT NOT NULL,
