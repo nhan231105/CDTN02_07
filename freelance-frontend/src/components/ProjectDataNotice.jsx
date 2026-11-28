@@ -1,4 +1,8 @@
+export const showProjectDataNotice = import.meta.env.MODE !== 'presentation'
+
 export default function ProjectDataNotice({ id }) {
+  if (!showProjectDataNotice) return null
+
   return (
     <p id={id} className="project-data-notice">
       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
