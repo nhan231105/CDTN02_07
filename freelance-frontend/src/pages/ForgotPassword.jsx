@@ -5,6 +5,7 @@ import { Feedback, Field } from '../components/UI'
 import OtpInput from '../components/OtpInput'
 import PasswordInput from '../components/PasswordInput'
 import { strongPassword } from '../utils/format'
+import useCooldown from '../hooks/useCooldown'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
@@ -16,6 +17,7 @@ export default function ForgotPassword() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [cooldown, startCooldown] = useCooldown(60)
 
   async function send() {
     setBusy(true)
@@ -24,10 +26,12 @@ export default function ForgotPassword() {
       await api.forgotPassword({ email })
       setSent(true)
       setCode('')
+      startCooldown()
       setMessage(
         'Nếu tài khoản có thể đặt lại mật khẩu, bạn sẽ nhận được email.',
       )
     } catch (err) {
+      if (err.status === 429 && err.code === 'OTP_COOLDOWN') startCooldown()
       setError(err.message)
     } finally {
       setBusy(false)
@@ -109,10 +113,10 @@ export default function ForgotPassword() {
             <button
               type="button"
               className="text-button"
-              disabled={busy}
+              disabled={busy || cooldown > 0}
               onClick={send}
             >
-              Gửi lại mã
+              {cooldown > 0 ? `Gửi lại mã sau ${cooldown}s` : 'Gửi lại mã'}
             </button>
           )}
         </form>

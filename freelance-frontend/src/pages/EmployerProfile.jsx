@@ -1,4 +1,5 @@
 import PasswordInput from '../components/PasswordInput'
+import PasswordChangeCode from '../components/PasswordChangeCode'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api, { upload } from '../api/apiService'
@@ -53,6 +54,7 @@ export default function EmployerProfile() {
     phone: '',
     password: '',
     currentPassword: '',
+    code: '',
   })
   const previews = useRef([])
 
@@ -142,6 +144,10 @@ export default function EmployerProfile() {
       )
     if (!account.email && !account.phone && !account.password)
       return setError('Nhập ít nhất một thông tin cần thay đổi.')
+    if (account.password && !/^\d{6}$/.test(account.code))
+      return setError(
+        'Vui lòng nhập mã xác minh 6 số đã gửi tới email để đổi mật khẩu.',
+      )
     run('account', async () => {
       const data = Object.fromEntries(
         Object.entries(account).filter(([, v]) => v !== ''),
@@ -154,7 +160,13 @@ export default function EmployerProfile() {
       }
       await load()
       await refresh()
-      setAccount({ email: '', phone: '', password: '', currentPassword: '' })
+      setAccount({
+        email: '',
+        phone: '',
+        password: '',
+        currentPassword: '',
+        code: '',
+      })
       setMessage('Đã cập nhật tài khoản. Có thể đổi lại sau 48 giờ.')
     })
   }
@@ -490,6 +502,13 @@ export default function EmployerProfile() {
                 }
               />
             </Field>
+            {account.password && (
+              <PasswordChangeCode
+                value={account.code}
+                onChange={(code) => setAccount({ ...account, code })}
+                onError={setError}
+              />
+            )}
             <Field id="currentPassword" label="Mật khẩu hiện tại">
               <PasswordInput
                 id="currentPassword"

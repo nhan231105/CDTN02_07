@@ -9,6 +9,7 @@ import org.springframework.web.client.RestClient;
 
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
@@ -42,6 +43,28 @@ class CampusEmailTest {
         assertThrows(CampusEmail.DeliveryException.class,
                 () -> mail.send("recipient@example.test", "Xác minh", "123456"));
         server.verify();
+    }
+
+    @Test
+    void missingConfigurationFailsWith503() {
+        var none = new CampusEmail("", "", "auto", "", 587, "", "", true);
+        assertThrows(CampusEmail.DeliveryException.class, none::ensureConfigured);
+        var brevoWithoutSender = new CampusEmail("key", "", "auto", "", 587, "", "", true);
+        assertThrows(CampusEmail.DeliveryException.class, brevoWithoutSender::ensureConfigured);
+    }
+
+    @Test
+    void smtpUsesUsernameAsSenderWhenFromIsBlank() {
+        var smtp = new CampusEmail("", "", "auto", "smtp.example.test", 587, "sender@example.test", "secret", true);
+        assertDoesNotThrow(smtp::ensureConfigured);
+    }
+
+    @Test
+    void logProviderIsDevelopmentOnly() {
+        var dev = new CampusEmail("", "", "log", "", 587, "", "", true);
+        assertDoesNotThrow(() -> dev.send("recipient@example.test", "Xác minh", "123456"));
+        assertThrows(IllegalStateException.class, () -> new CampusEmail("", "", "log", "", 587, "", "", false));
+        assertThrows(IllegalStateException.class, () -> new CampusEmail("", "", "pigeon", "", 587, "", "", true));
     }
 
     @Test

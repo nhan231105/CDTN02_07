@@ -33,6 +33,14 @@ public class AccountEmailController {
         return ApiResponse.success("Đã đặt lại mật khẩu.");
     }
 
+    /** Signed-in Student/Employer: send a code to the current email before changing the password. */
+    @PostMapping("/password/change-code")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<Void> passwordChangeCode() {
+        accounts.requestPasswordChange(org.example.security.CurrentUser.id());
+        return ApiResponse.success("Đã gửi mã xác minh tới email hiện tại của bạn.");
+    }
+
     public record RegistrationVerification(@NotNull @Valid RegisterRequest registration,
             @NotBlank @Pattern(regexp = "[0-9]{6}") String code) {}
     public record EmailRequest(@NotBlank @Email @Size(max = 150) String email) {}

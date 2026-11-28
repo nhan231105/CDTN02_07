@@ -1,4 +1,5 @@
 import PasswordInput from '../components/PasswordInput'
+import PasswordChangeCode from '../components/PasswordChangeCode'
 import { useMessage } from '../context/toast'
 import { useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
@@ -20,6 +21,7 @@ export default function StudentProfile({ employer = false }) {
     phone: '',
     password: '',
     currentPassword: '',
+    code: '',
   })
   const [avatar, setAvatar] = useState('')
   const load = useCallback(async () => {
@@ -134,6 +136,10 @@ export default function StudentProfile({ employer = false }) {
       )
     if (!account.email && !account.phone && !account.password)
       return setError('Nhập ít nhất một thông tin cần thay đổi.')
+    if (account.password && !/^\d{6}$/.test(account.code))
+      return setError(
+        'Vui lòng nhập mã xác minh 6 số đã gửi tới email để đổi mật khẩu.',
+      )
     run(async () => {
       const data = Object.fromEntries(
         Object.entries(account).filter(([, v]) => v !== ''),
@@ -146,7 +152,13 @@ export default function StudentProfile({ employer = false }) {
       }
       await load()
       await refresh()
-      setAccount({ email: '', phone: '', password: '', currentPassword: '' })
+      setAccount({
+        email: '',
+        phone: '',
+        password: '',
+        currentPassword: '',
+        code: '',
+      })
       setMessage(
         'Đã cập nhật tài khoản. Thông tin được giới hạn thay đổi trong 48 giờ.',
       )
@@ -577,6 +589,13 @@ export default function StudentProfile({ employer = false }) {
                   }
                 />
               </Field>
+              {account.password && (
+                <PasswordChangeCode
+                  value={account.code}
+                  onChange={(code) => setAccount({ ...account, code })}
+                  onError={setError}
+                />
+              )}
               <Field id="currentPassword" label="Mật khẩu hiện tại">
                 <PasswordInput
                   id="currentPassword"

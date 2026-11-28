@@ -35,6 +35,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET locally (at least 32 bytes)}
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       CAMPUSWORK_EMAIL_FROM: ${CAMPUSWORK_EMAIL_FROM:-}
+      CAMPUSWORK_EMAIL_PROVIDER: ${CAMPUSWORK_EMAIL_PROVIDER:-auto}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     ports:
       - "8082:8082"
     depends_on:

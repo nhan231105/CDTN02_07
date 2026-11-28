@@ -2,6 +2,7 @@ import PasswordInput from '../components/PasswordInput'
 import { strongPassword } from '../utils/format'
 import api from '../api/apiService'
 import OtpInput from '../components/OtpInput'
+import useCooldown from '../hooks/useCooldown'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/auth'
@@ -23,6 +24,7 @@ export default function Register() {
   const [terms, setTerms] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [cooldown, startCooldown] = useCooldown(60)
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value })
   const submit = async (e) => {
     e.preventDefault()
@@ -40,7 +42,9 @@ export default function Register() {
       setNotice('Nếu thông tin hợp lệ, mã sẽ được gửi đến ' + form.email + '.')
       setCode('')
       setVerifying(true)
+      startCooldown()
     } catch (err) {
+      if (err.status === 429 && err.code === 'OTP_COOLDOWN') startCooldown()
       setError(err.message)
     } finally {
       setBusy(false)
@@ -101,9 +105,9 @@ export default function Register() {
                 type="button"
                 className="text-button"
                 onClick={submit}
-                disabled={busy}
+                disabled={busy || cooldown > 0}
               >
-                Gửi lại mã
+                {cooldown > 0 ? `Gửi lại mã sau ${cooldown}s` : 'Gửi lại mã'}
               </button>
               <button
                 type="button"

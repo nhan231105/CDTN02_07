@@ -280,10 +280,40 @@ class SecurityProfileIntegrationTest {
         mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("email","changed"+d.get("email"),"currentPassword",d.get("password"))))).andExpect(status().isOk());
         mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("phone","0800000000","currentPassword",d.get("password"))))).andExpect(status().isConflict());
     }
+    private String passwordChangeCode(String token,String email)throws Exception{
+        org.mockito.Mockito.clearInvocations(mail);
+        var code=org.mockito.ArgumentCaptor.forClass(String.class);
+        mvc.perform(post("/auth/password/change-code").header("Authorization","Bearer "+token)).andExpect(status().isAccepted());
+        org.mockito.Mockito.verify(mail).send(org.mockito.ArgumentMatchers.eq(email.toLowerCase(Locale.ROOT)),org.mockito.ArgumentMatchers.anyString(),code.capture());
+        return code.getValue();
+    }
     @Test void passwordChangeInvalidatesOldToken()throws Exception{
         var d=data("STUDENT");register(d);String token=login(d);
-        mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("password","AnotherPass123!","currentPassword",d.get("password"))))).andExpect(status().isOk()).andExpect(jsonPath("$.requiresLogin").value(true));
+        String code=passwordChangeCode(token,d.get("email"));
+        mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(Map.of("password","AnotherPass123!","currentPassword",d.get("password"),"code",code)))).andExpect(status().isOk()).andExpect(jsonPath("$.requiresLogin").value(true));
         mvc.perform(get("/me/profile").header("Authorization","Bearer "+token)).andExpect(status().isUnauthorized());
+        mvc.perform(post("/auth/login").contentType("application/json").content(body(Map.of("identifier",d.get("email"),"password","AnotherPass123!")))).andExpect(status().isOk());
+    }
+    @Test void passwordChangeRequiresEmailCodeForStudentAndEmployer()throws Exception{
+        for(String role:List.of("STUDENT","EMPLOYER")){
+            var d=data(role);register(d);String token=login(d);
+            var change=new HashMap<String,String>(Map.of("password","AnotherPass123!","currentPassword",d.get("password")));
+            // Không có mã -> từ chối, mật khẩu không đổi
+            mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(change))).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("OTP_REQUIRED"));
+            String code=passwordChangeCode(token,d.get("email"));
+            // Gửi lại ngay -> cooldown 60s
+            mvc.perform(post("/auth/password/change-code").header("Authorization","Bearer "+token)).andExpect(status().isTooManyRequests());
+            // Sai mã -> vẫn tính lượt thử dù giao dịch cập nhật bị rollback
+            change.put("code",code.equals("000000")?"111111":"000000");
+            mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(change))).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_OTP"));
+            assertEquals(1,challenges.findById("change:"+d.get("email").toLowerCase(Locale.ROOT)).orElseThrow().getAttempts());
+            // Đúng mã -> đổi thành công, mã bị vô hiệu hóa
+            change.put("code",code);
+            mvc.perform(patch("/me/account").header("Authorization","Bearer "+token).contentType("application/json").content(body(change))).andExpect(status().isOk());
+            assertNull(challenges.findById("change:"+d.get("email").toLowerCase(Locale.ROOT)).orElseThrow().getCodeHash());
+            mvc.perform(post("/auth/login").contentType("application/json").content(body(Map.of("identifier",d.get("email"),"password","AnotherPass123!")))).andExpect(status().isOk());
+        }
+        mvc.perform(post("/auth/password/change-code")).andExpect(status().isUnauthorized());
     }
     @Test void concurrentAccountChangesCannotBypass48HourLimit()throws Exception{
         var d=data("STUDENT");register(d);String token=login(d);

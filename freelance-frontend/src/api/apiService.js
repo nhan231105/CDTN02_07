@@ -89,6 +89,8 @@ const api = {
   verifyRegistration: (data) => request('POST', '/auth/register/verify', data),
   forgotPassword: (data) => request('POST', '/auth/password/forgot', data),
   resetPassword: (data) => request('POST', '/auth/password/reset', data),
+  requestPasswordChangeCode: () =>
+    request('POST', '/auth/password/change-code'),
   conversation: (id, page) =>
     request('GET', '/applications/' + id + '/messages', null, { page }),
   sendMessage: (id, body) =>

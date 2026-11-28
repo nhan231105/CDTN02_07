@@ -7,6 +7,7 @@ import org.example.entity.*;
 import org.example.repository.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -74,6 +75,32 @@ public class AccountEmailService {
         user.setTokenVersion(user.getTokenVersion() + 1);
     }
 
+    /** Sends a 6-digit code to the signed-in user's current email before a password change. */
+    @Transactional(noRollbackFor = CampusEmail.DeliveryException.class)
+    public void requestPasswordChange(Long userId) {
+        mail.ensureConfigured();
+        User user = users.findLockedById(userId)
+                .orElseThrow(() -> new DomainException(401, "UNAUTHENTICATED", "Vui lòng đăng nhập"));
+        String version = version(user);
+        if (version == null) {
+            throw new DomainException(403, "ACCOUNT_LOCKED", "Tài khoản đã bị khóa");
+        }
+        issue("change", normalize(user.getEmail()), version);
+        log.info("Password-change OTP accepted by email provider userId={}", user.getId());
+    }
+
+    /**
+     * Consumes the password-change code. Runs in its own transaction so that a wrong code still
+     * counts as an attempt even though the caller's account update is rolled back.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = InvalidCode.class)
+    public void verifyPasswordChange(User user, String code) {
+        if (code == null || !code.matches("[0-9]{6}")) {
+            throw new DomainException(400, "OTP_REQUIRED", "Vui lòng nhập mã xác minh 6 số đã gửi tới email của bạn.");
+        }
+        verify("change", normalize(user.getEmail()), code, version(user));
+    }
+
     private void issue(String purpose, String email, String accountVersion) {
         String id = purpose + ":" + email;
         EmailChallenge challenge = challenges.findLocked(id).orElseGet(() -> {
@@ -103,9 +130,13 @@ public class AccountEmailService {
         challenge.setAttempts(0);
         challenge.setSends(challenge.getSends() + 1);
         if (accountVersion != null) {
-            boolean registration = purpose.equals("register");
+            String subject = switch (purpose) {
+                case "register" -> "Xác minh email CampusWork";
+                case "change" -> "Xác nhận đổi mật khẩu CampusWork";
+                default -> "Đặt lại mật khẩu CampusWork";
+            };
             try {
-                mail.send(email, registration ? "Xác minh email CampusWork" : "Đặt lại mật khẩu CampusWork", code);
+                mail.send(email, subject, code);
             } catch (CampusEmail.DeliveryException failure) {
                 challenge.setCodeHash(null);
                 throw failure;
