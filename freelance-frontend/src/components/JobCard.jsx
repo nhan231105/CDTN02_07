@@ -19,6 +19,7 @@ export default function JobCard({
         <CompanyLogo
           id={job.employerId}
           name={job.employerName || job.category}
+          version={job.employerLogoRef}
           className={'color-' + (index % 4)}
         />
         <div className="job-card-actions">

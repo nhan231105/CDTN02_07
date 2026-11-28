@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import CompanyLogo from './CompanyLogo'
 
 const categoryMeta = {
   Hospitality: 'Nhà hàng – Quán cà phê',
@@ -80,9 +81,7 @@ export default function Showcase({ summary, onPick }) {
                 to={'/employers/' + e.id}
                 className="employer-tile"
               >
-                <span className={'company-logo large color-' + (i % 4)}>
-                  {e.name.charAt(0)}
-                </span>
+                <CompanyLogo id={e.id} name={e.name} version={e.logoRef} className={'large color-' + (i % 4)} />
                 <strong>{e.name}</strong>
                 <span className="badge-pill green">
                   {e.jobs} việc đang tuyển

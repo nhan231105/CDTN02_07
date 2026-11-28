@@ -7,6 +7,8 @@ export function brandImage(id, kind, version) {
     id +
     '/' +
     kind +
-    (version ? '?v=' + encodeURIComponent(version) : '')
+    (kind === 'logo'
+      ? '?revision=2' + (version ? '&v=' + encodeURIComponent(version) : '')
+      : version ? '?v=' + encodeURIComponent(version) : '')
   )
 }

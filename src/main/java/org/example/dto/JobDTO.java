@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.entity.Job;
+import org.example.entity.EmployerProfile;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ public class JobDTO {
     private String status;
     private Long employerId;
     private String employerName;
+    private String employerLogoRef;
     private Boolean removedByAdmin;
     private String removalReason;
     private String jobType;
@@ -44,6 +46,21 @@ public class JobDTO {
     private Double distanceKm;
     private String riskLevel;
     private java.util.List<String> riskFlags;
+
+    public JobDTO(Job job, EmployerProfile profile) {
+        this(job);
+        withEmployerProfile(profile);
+    }
+
+    public JobDTO withEmployerProfile(EmployerProfile profile) {
+        if (profile != null) {
+            if (profile.getOrgName() != null && !profile.getOrgName().isBlank()) {
+                employerName = profile.getOrgName();
+            }
+            employerLogoRef = profile.getLogoRef();
+        }
+        return this;
+    }
 
     public JobDTO(Job job) {
         this.jobType = job.getJobType() == null ? null : job.getJobType().name();

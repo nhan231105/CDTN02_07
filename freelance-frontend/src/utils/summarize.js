@@ -13,6 +13,7 @@ export function summarize(jobs) {
       const e = acc[job.employerId] || {
         id: job.employerId,
         name: job.employerName || 'Nhà tuyển dụng',
+        logoRef: job.employerLogoRef,
         jobs: 0,
       }
       e.jobs += 1

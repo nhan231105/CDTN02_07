@@ -35,11 +35,13 @@ public class PublicEmployerController {
 
     private org.springframework.http.ResponseEntity<byte[]> image(String ref) {
         var file = files.requireImage(ref);
+        byte[] content = files.read(file);
         return org.springframework.http.ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.parseMediaType(file.getContentType()))
                 .header("X-Content-Type-Options", "nosniff")
-                .cacheControl(org.springframework.http.CacheControl.maxAge(java.time.Duration.ofDays(30)).cachePublic())
-                .body(files.read(file));
+                .cacheControl(org.springframework.http.CacheControl.noCache().cachePublic())
+                .eTag(org.springframework.util.DigestUtils.md5DigestAsHex(content))
+                .body(content);
     }
 
     @GetMapping("/employers/{id}/public")
@@ -69,7 +71,7 @@ public class PublicEmployerController {
         m.put("averageRating", avg == null ? null : Math.round(avg * 10) / 10.0);
         m.put("reviewCount", reviews.countByRevieweeIdAndIsHiddenFalse(id));
         m.put("openJobCount", open.getTotalElements());
-        m.put("openJobs", open.getContent().stream().map(JobDTO::new).toList());
+        m.put("openJobs", open.getContent().stream().map(job -> new JobDTO(job, profile)).toList());
         return m;
     }
 }

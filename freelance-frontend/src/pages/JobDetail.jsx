@@ -431,7 +431,7 @@ export default function JobDetail() {
               id={job.employerId}
               name={job.employerName}
               className="large jd-logo"
-              version={employer?.logoRef}
+              version={employer?.logoRef ?? job.employerLogoRef}
             />
             <h3>
               <Link to={'/employers/' + job.employerId}>

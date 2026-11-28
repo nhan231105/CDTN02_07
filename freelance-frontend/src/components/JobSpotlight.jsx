@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import CompanyLogo from './CompanyLogo'
 import { jobTypeLabels, salaryText, shiftLabels } from '../utils/format'
 
 const SLIDE_MS = 5000
@@ -64,9 +65,12 @@ export default function JobSpotlight({ jobs, limit = 6 }) {
               tabIndex={state === 'active' ? 0 : -1}
               aria-hidden={state !== 'active'}
             >
-              <span className={'spot-logo color-' + (i % 4)}>
-                {(job.employerName || job.category || 'C').charAt(0)}
-              </span>
+              <CompanyLogo
+                id={job.employerId}
+                name={job.employerName || job.category}
+                version={job.employerLogoRef}
+                className={'spot-logo color-' + (i % 4)}
+              />
               <span className="spot-company">
                 {job.employerName || 'Nhà tuyển dụng'}
               </span>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { request } from '../api/apiService'
-import { brandImage } from '../utils/brand'
+import CompanyLogo from './CompanyLogo'
 
 // Ảnh đại diện của người dùng đang đăng nhập: sinh viên lấy ảnh riêng tư
 // qua /me/avatar, nhà tuyển dụng dùng logo công khai của công ty mình.
@@ -31,11 +31,7 @@ export default function MyAvatar({ user, className = '' }) {
   }, [isStudent, ref])
 
   if (!isStudent && user?.role === 'EMPLOYER' && user?.logoRef) {
-    return (
-      <span className={'avatar avatar-img ' + className}>
-        <img src={brandImage(user.id, 'logo', user.logoRef)} alt="" />
-      </span>
-    )
+    return <CompanyLogo id={user.id} name={user.orgName || user.fullName} version={user.logoRef} className={'avatar ' + className} />
   }
   if (isStudent && url) {
     return (
