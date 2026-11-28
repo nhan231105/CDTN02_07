@@ -15,6 +15,7 @@ import { Feedback, Field, Loading, Modal, Status } from '../components/UI'
 import SaveButton from '../components/SaveButton'
 import RichText from '../components/RichText'
 import CompanyLogo from '../components/CompanyLogo'
+import ProjectDataNotice from '../components/ProjectDataNotice'
 import { brandImage } from '../utils/brand'
 import useSavedJobs from '../hooks/useSavedJobs'
 import useMyProfile from '../hooks/useMyProfile'
@@ -301,6 +302,7 @@ export default function JobDetail() {
                   </span>
                 ))}
               </div>
+              <ProjectDataNotice id="job-data-notice" />
             </div>
             <div className="jd-actions">
               {canApply && (
@@ -309,6 +311,7 @@ export default function JobDetail() {
                   disabled={
                     job.status !== 'OPEN' || applied || applicationChecking
                   }
+                  aria-describedby="job-data-notice"
                   onClick={start}
                 >
                   {applyLabel}
@@ -525,6 +528,7 @@ export default function JobDetail() {
             <button
               className="btn primary"
               disabled={job.status !== 'OPEN' || applied || applicationChecking}
+              aria-describedby="job-data-notice"
               onClick={start}
             >
               {applyLabel}
@@ -538,6 +542,7 @@ export default function JobDetail() {
             {job.title} · {job.employerName}
           </p>
           <Feedback error={error} />
+          <ProjectDataNotice id="apply-data-notice" />
           <form onSubmit={submit}>
             <div className="cv-summary">
               <span>▤</span>
@@ -575,7 +580,7 @@ export default function JobDetail() {
               >
                 Quay lại
               </button>
-              <button className="btn primary" disabled={busy || !cv?.cvFileRef}>
+              <button className="btn primary" aria-describedby="apply-data-notice" disabled={busy || !cv?.cvFileRef}>
                 {busy ? 'Đang gửi…' : 'Xác nhận nộp đơn'}
               </button>
             </div>

@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import api from '../api/apiService'
 import { Empty, Feedback, Loading, Pagination } from '../components/UI'
 import JobCard from '../components/JobCard'
+import ProjectDataNotice from '../components/ProjectDataNotice'
 import useSavedJobs from '../hooks/useSavedJobs'
 import useMyProfile from '../hooks/useMyProfile'
 import { matchJob } from '../utils/match'
@@ -191,6 +192,7 @@ export default function Jobs() {
           <h1>
             Tìm việc <em>hợp lịch học</em> của bạn
           </h1>
+          <ProjectDataNotice />
           <div className="jobs-searchrow">
             <form className="hero-search" onSubmit={filter}>
               <label className="sr-only" htmlFor="keyword">

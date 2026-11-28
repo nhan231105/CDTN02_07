@@ -1,12 +1,25 @@
 .project-data-notice {
-  padding: 9px 20px;
-  background: #fff4d6;
-  border-bottom: 1px solid #e5cf96;
-  color: #533800;
-  text-align: center;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 14px;
+  color: var(--t3, #46696c);
+  font-size: 0.875rem;
   line-height: 1.5;
 }
+
+.project-data-notice svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--lime, #0f766e);
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+
 .container {
   max-width: 1220px;
   margin: 0 auto;
